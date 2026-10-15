@@ -51,7 +51,7 @@ function FormCell({ l, position, active, lang }: { l: Letter; position: Position
       }`}
     >
       <span className="label text-muted">{POS_LABEL[position][lang]}</span>
-      <ArIsland block size="inherit" className="text-[2.4rem] leading-[1.7]" aria-hidden>
+      <ArIsland block size="inherit" className="text-[1.9rem] leading-[1.7] min-[480px]:text-[2.4rem]" aria-hidden>
         {parts ? (
           <>
             {parts[0] && <span>{parts[0]}</span>}

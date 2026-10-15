@@ -72,7 +72,7 @@ function LadderRow({ rung, state, here, viaPlacement }: { rung: Rung; state: Run
         </span>
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           <span className={`font-display text-body ${soon ? 'text-muted' : 'font-semibold'}`}>{rung.name}</span>
-          <ArIsland face="ui" className="hidden text-ar-small leading-none text-muted min-[380px]:inline">
+          <ArIsland face="ui" className="hidden text-[1.05rem] leading-none text-muted min-[380px]:inline">
             {stripHarakat(rung.name_ar)}
           </ArIsland>
           <span className="label text-muted">{cefrLabel(rung.cefr, lang)}</span>

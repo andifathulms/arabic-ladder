@@ -76,7 +76,7 @@ export function LessonStrip({ lessons, progress, currentId }: { lessons: LessonS
               </span>
               <span className="flex items-center justify-between gap-2 border-t border-rule px-4 py-3">
                 <span className="min-w-0 truncate text-small text-muted" lang={lang}>
-                  {stateWord(s, t, l.minutes)}
+                  {s.kind === 'new' ? t('lesson.state.new') : stateWord(s, t, l.minutes)}
                 </span>
                 <span className="label shrink-0 tnum text-muted">{t('lesson.minutes', { n: l.minutes })}</span>
               </span>
