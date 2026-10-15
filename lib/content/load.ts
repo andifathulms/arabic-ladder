@@ -155,7 +155,10 @@ export function getMakhraj(): MakhrajPoint[] {
   return MakhrajSchema.parse(readYaml('data/makhraj.yaml'));
 }
 
+/** core.yaml plus any per-rung lexicon files beside it (lexicon/<rung>.yaml). */
 export function getLexicon(): LexiconEntry[] {
-  if (!exists('lexicon/core.yaml')) return [];
-  return LexiconSchema.parse(readYaml('lexicon/core.yaml'));
+  const dir = path.join(CONTENT_DIR, 'lexicon');
+  if (!fs.existsSync(dir)) return [];
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yaml')).sort((a, b) => (a === 'core.yaml' ? -1 : b === 'core.yaml' ? 1 : a.localeCompare(b)));
+  return files.flatMap((f) => LexiconSchema.parse(readYaml(`lexicon/${f}`) ?? []));
 }
