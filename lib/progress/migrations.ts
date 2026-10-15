@@ -47,7 +47,6 @@ function normalize(s: Raw): ProgressState {
     opened: Array.isArray(s.opened) ? s.opened.filter((d): d is string => typeof d === 'string') : [],
     settings: {
       uiLang: pick('uiLang', ['id', 'en']),
-      explain: pick('explain', ['rung', 'id', 'en']),
       voice: pick('voice', ['female', 'male']),
       rate: pick('rate', [0.75, 1]),
       sfx: pick('sfx', [true, false]),

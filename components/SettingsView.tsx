@@ -90,18 +90,6 @@ export function SettingsView() {
             ]}
           />
         </Row>
-        <Row label={t('settings.explain')}>
-          <Segmented
-            label={t('settings.explain')}
-            value={s.explain}
-            onChange={(v) => set({ explain: v })}
-            options={[
-              { value: 'rung', label: t('settings.explain.rung') },
-              { value: 'id', label: t('settings.explain.id') },
-              { value: 'en', label: t('settings.explain.en') },
-            ]}
-          />
-        </Row>
       </Group>
 
       <Group title={t('settings.group.sound')}>

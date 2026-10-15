@@ -74,7 +74,7 @@ export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Pr
         </div>
         <p className="max-w-measure text-body text-board-ink">{lang === 'en' ? rung.description.en : rung.description.id}</p>
         <p className="text-small text-board-muted">
-          {t('rung.explainLang')}: {t(`rung.explain.${rung.explain_lang}`)}
+          {t(`rung.translit.${rung.translit}`)} · {t(`rung.harakat.${rung.harakat}`)}
         </p>
       </header>
 

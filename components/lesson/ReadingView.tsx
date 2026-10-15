@@ -7,11 +7,13 @@ import { rungHref } from '@/lib/routes';
 import { useT } from '../ProgressProvider';
 import { IconArrowLeft } from '../ui/Icon';
 import { CheckItemView } from '../check/CheckItemView';
-import { Sentence } from './Sentence';
+import { ArSentence } from '../ar/ArSentence';
+import { ArIsland } from '../ar/ArIsland';
+import { GlossaryChips } from './GlossaryChips';
 
 /** The rung's Read & listen capstone: one short text read aloud, then a few questions. */
 export function ReadingView({ rung, reading }: { rung: Rung; reading: Reading }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [solved, setSolved] = useState<string[]>([]);
   const allDone = solved.length === reading.items.length;
 
@@ -35,20 +37,20 @@ export function ReadingView({ rung, reading }: { rung: Rung; reading: Reading })
       <main className="page flex max-w-lesson flex-1 flex-col gap-6 py-7">
         <div className="flex flex-col gap-1">
           <p className="eyebrow">{t('read.title')}</p>
-          <h1 className="text-h1" lang="en">
-            {reading.title.en}
+          <h1 className="text-h1" lang={lang}>
+            {lang === 'en' ? reading.title.en : reading.title.id}
           </h1>
-          <p className="id-text" lang="id">
-            {reading.title.id}
-          </p>
+          <ArIsland block as="p" size="title" face="display" className="text-muted">
+            {reading.title.ar}
+          </ArIsland>
         </div>
 
-        <section className="card flex flex-col gap-4 p-5" aria-label={reading.title.en}>
-          <Sentence en={reading.text} size="body" />
+        <section className="card flex flex-col gap-4 p-5" aria-label={reading.title.id}>
+          <ArSentence ar={reading.ar} tr={rung.translit === 'always' ? reading.tr : undefined} size="body" />
           <details>
             <summary className="label cursor-pointer py-2 text-accent">{t('read.translation')}</summary>
-            <p lang="id" className="id-text">
-              {reading.translation}
+            <p lang={lang === 'en' && reading.en ? 'en' : 'id'} className="id-text">
+              {lang === 'en' ? (reading.en ?? reading.id) : reading.id}
             </p>
           </details>
         </section>
@@ -56,18 +58,7 @@ export function ReadingView({ rung, reading }: { rung: Rung; reading: Reading })
         {reading.glossary.length > 0 && (
           <section className="flex flex-col gap-2">
             <h2 className="eyebrow">{t('lesson.newWords')}</h2>
-            <ul className="flex flex-wrap gap-2">
-              {reading.glossary.map((g) => (
-                <li key={g.en} className="card flex items-baseline gap-2 px-3 py-1">
-                  <span lang="en" className="font-display font-semibold">
-                    {g.en}
-                  </span>
-                  <span lang="id" className="id-text text-small">
-                    {g.id}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <GlossaryChips words={reading.glossary} />
           </section>
         )}
 

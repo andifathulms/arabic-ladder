@@ -7,17 +7,22 @@ import type { Lesson, LessonSummary, Rung } from '@/lib/types';
 import * as store from '@/lib/progress/store';
 import { sfx } from '@/lib/speech/sfx';
 import { lessonHref, rungHref, testHref } from '@/lib/routes';
-import { useProgress, useSettings, useT } from '../ProgressProvider';
+import { useProgress, useT } from '../ProgressProvider';
 import { IconArrowLeft, IconArrowRight, IconCheck, IconClose } from '../ui/Icon';
 import { Badge } from '../ui/Badge';
 import { NotchBar } from '../ladder/NotchBar';
 import { BottomActionBar } from './BottomActionBar';
 import { PairCard } from './PairCard';
 import { Prose } from './Prose';
-import { Sentence } from './Sentence';
 import { StepBar } from './StepBar';
 import { StepLabel } from './StepLabel';
-import { SoundCard, TalkCard, WordsCard } from './StrandCards';
+import { MesirCard, SoundCard, TalkCard, WordsCard } from './StrandCards';
+import { TirukanCard } from './TirukanCard';
+import { GlossaryChips } from './GlossaryChips';
+import { LessonTopToggles } from './LessonTopToggles';
+import { ArIsland } from '../ar/ArIsland';
+import { ArSentence } from '../ar/ArSentence';
+import { LessonTextProvider } from '../ar/LessonText';
 import { CheckStep } from '../check/CheckStep';
 import { VisualStage } from '../visuals/VisualStage';
 import { STEP_KEYS } from './steps';
@@ -33,8 +38,12 @@ type Props = {
 
 export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralRung }: Props) {
   const { t, lang } = useT();
-  const settings = useSettings();
   const progress = useProgress();
+  // Lesson-scoped supports (CLAUDE.md §7.2): plain state, so they reset when the lesson closes.
+  const [latinOn, setLatinOn] = useState(false);
+  const [harakatOn, setHarakatOn] = useState(false);
+  const [holdHint, setHoldHint] = useState(rung.harakat !== 'full');
+  const showTranslit = rung.translit === 'always' || (rung.translit === 'on-request' && latinOn);
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState<'fwd' | 'back'>('fwd');
@@ -43,6 +52,10 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
   const [solved, setSolved] = useState<boolean[]>(() => lesson.check.map(() => false));
   const [freshNotch, setFreshNotch] = useState<number | undefined>(undefined);
   const headingRef = useRef<HTMLDivElement>(null);
+  // The hold hint shows once per lesson, on the first Examples visit.
+  useEffect(() => {
+    if (step > 2) setHoldHint(false);
+  }, [step]);
   const announceRef = useRef<HTMLParagraphElement>(null);
 
   // Resume where the learner stopped. Runs once, after stored progress is readable.
@@ -138,23 +151,9 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
     return () => window.removeEventListener('keydown', onKey);
   }, [step, canContinue, go, advance]);
 
-  const effective = settings.explain === 'rung' ? rung.explain_lang : settings.explain;
-  // Short strand cards have no collapsed translation, so mixed shows English.
-  const cardLang = effective === 'id' ? 'id' : 'en';
-  const explain = (b: { id: string; en: string }) =>
-    effective === 'id' ? (
-      <Prose text={b.id} lang="id" />
-    ) : effective === 'en' ? (
-      <Prose text={b.en} lang="en" />
-    ) : (
-      <div className="flex flex-col gap-3">
-        <Prose text={b.en} lang="en" />
-        <details className="text-muted">
-          <summary className="label cursor-pointer py-2 text-accent">{t('lesson.idCollapsed')}</summary>
-          <Prose text={b.id} lang="id" />
-        </details>
-      </div>
-    );
+  // Explanations are always Indonesian, with English as a UI-language option (PRD §5.3).
+  const explain = (b: { id: string; en: string }) => <Prose text={lang === 'en' ? b.en : b.id} lang={lang} />;
+  const titleMain = lang === 'en' ? lesson.title.en : lesson.title.id;
 
   const missed = lesson.check.filter((c) => progress.items[c.id]?.firstTry === false).length;
   const done = rungLessons.filter((l) => progress.lessons[l.id]?.completed).length;
@@ -167,12 +166,17 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
         <>
           <StepLabel>{t('step.concept')}</StepLabel>
           <div className="flex flex-col gap-1">
-            <h1 className="text-h1" lang="en">
-              {lesson.title.en}
+            <h1 className="text-h1" lang={lang}>
+              {titleMain}
             </h1>
-            <p className="id-text" lang="id">
-              {lesson.title.id}
-            </p>
+            {lang === 'en' && (
+              <p className="id-text" lang="id">
+                {lesson.title.id}
+              </p>
+            )}
+            <ArIsland block as="p" size="title" face="display" className="text-muted">
+              {lesson.title.ar}
+            </ArIsland>
           </div>
           {explain(lesson.concept)}
         </>
@@ -189,8 +193,8 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
               <h3 className="eyebrow">{t('lesson.worked')}</h3>
               <ul className="flex flex-col gap-4">
                 {lesson.worked!.map((w) => (
-                  <li key={w.en}>
-                    <Sentence en={w.en} id={w.id} />
+                  <li key={w.ar}>
+                    <ArSentence ar={w.ar} tr={w.tr} id={w.id} en={w.en} />
                   </li>
                 ))}
               </ul>
@@ -204,15 +208,22 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
         <>
           <StepLabel>{t('step.examples')}</StepLabel>
           <p className="text-small text-muted">{t('lesson.tapFocus')}</p>
-          <ul className="flex flex-col gap-5">
+          {holdHint && (
+            <p className="self-start rounded-sm bg-paper-2 px-3 py-1 text-small text-muted" role="note">
+              {t('lesson.holdHint')}
+            </p>
+          )}
+          <ul className="flex flex-col gap-6">
             {lesson.examples.map((ex) => (
-              <li key={ex.en}>
-                <Sentence en={ex.en} id={ex.id} note={ex.note ?? true} />
+              <li key={ex.ar}>
+                <ArSentence ar={ex.ar} tr={ex.tr} id={ex.id} en={ex.en} note={ex.display_only ? undefined : (ex.note ?? true)} />
               </li>
             ))}
           </ul>
+          <MesirCard examples={lesson.examples} note={lesson.eg_note} />
+          {lesson.sound && <SoundCard sound={lesson.sound} />}
           {lesson.talk && <TalkCard talk={lesson.talk} />}
-          {lesson.sound && <SoundCard sound={lesson.sound} explain={cardLang} />}
+          <TirukanCard {...lesson.tirukan} />
         </>
       );
       break;
@@ -222,7 +233,7 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
           <StepLabel>{t('step.contrast')}</StepLabel>
           {explain(lesson.contrast)}
           <PairCard off={lesson.pair.off} natural={lesson.pair.natural} />
-          {lesson.words && <WordsCard words={lesson.words} explain={cardLang} />}
+          {lesson.words && <WordsCard words={lesson.words} />}
         </>
       );
       break;
@@ -251,7 +262,7 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
             </span>
             <StepLabel>{t('step.done')}</StepLabel>
             <h1 className="text-h1 tracking-[-0.015em]">
-              {t('lesson.doneTitle', { title: lang === 'en' ? lesson.title.en : lesson.title.id })}
+              {t('lesson.doneTitle', { title: titleMain })}
             </h1>
             <p className="max-w-measure text-muted">{lang === 'en' ? lesson.summary.en : lesson.summary.id}</p>
           </div>
@@ -266,18 +277,7 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
           </div>
           <section className="flex flex-col gap-2">
             <h3 className="eyebrow">{t('lesson.newWords')}</h3>
-            <ul className="flex flex-wrap gap-2">
-              {lesson.glossary.map((g) => (
-                <li key={g.en} className="card flex items-baseline gap-2 px-3 py-1">
-                  <span lang="en" className="font-display font-semibold">
-                    {g.en}
-                  </span>
-                  <span lang="id" className="id-text text-small">
-                    {g.id}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <GlossaryChips words={lesson.glossary} />
           </section>
           <p className="text-muted">{missed ? t('lesson.toReview', { n: missed }) : checksDone ? t('lesson.allFirstTry') : null}</p>
           {spiralRung && <p className="text-small text-muted">{t('lesson.spiral', { rung: spiralRung })}</p>}
@@ -325,6 +325,14 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
               </span>
             </div>
           </div>
+          <LessonTopToggles
+            translit={rung.translit}
+            harakat={rung.harakat}
+            latinOn={latinOn}
+            harakatOn={harakatOn}
+            onLatin={setLatinOn}
+            onHarakat={setHarakatOn}
+          />
           <Link
             href={rungHref(rung.id)}
             aria-label={t('lesson.close')}
@@ -338,13 +346,15 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
       <main className="flex-1 bg-paper py-5 sm:py-7">
         <p ref={announceRef} className="sr-only" aria-live="polite" />
         <div className="page max-w-lesson sm:rounded-lg sm:bg-surface sm:px-7 sm:py-7 sm:shadow-e2">
-          <div
-            key={step}
-            ref={headingRef}
-            className={`flex flex-col gap-5 ${ready ? (dir === 'fwd' ? 'step-fwd' : 'step-back') : ''}`}
-          >
-            {body}
-          </div>
+          <LessonTextProvider harakat={rung.harakat} showTranslit={showTranslit} harakatOn={harakatOn}>
+            <div
+              key={step}
+              ref={headingRef}
+              className={`flex flex-col gap-5 ${ready ? (dir === 'fwd' ? 'step-fwd' : 'step-back') : ''}`}
+            >
+              {body}
+            </div>
+          </LessonTextProvider>
         </div>
       </main>
 

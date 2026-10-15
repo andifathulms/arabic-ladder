@@ -15,6 +15,8 @@ const itemBase = {
   from: z.string().optional(),
   /** exact keeps harakat and hamza seats; loose (default) ignores them. */
   match: z.enum(['exact', 'loose']).optional(),
+  /** Placement items only: which part of the check the item belongs to. */
+  section: z.enum(['forms', 'reading', 'harakat', 'sounds']).optional(),
 };
 
 const optionsMsg = { message: 'answer must be one of the options' };
@@ -132,18 +134,67 @@ export const CheckItemSchema = z
     }
   });
 
+/** An Arabic line: fully vowelled Fusha with its transliteration and translation. */
+const ArLine = {
+  ar: z.string().min(1),
+  tr: z.string().min(1),
+  id: z.string().min(1),
+  en: z.string().min(1).optional(),
+};
+
 const Example = z
-  .object({ en: z.string().min(1), id: z.string().min(1), note: Bilingual.optional() })
-  .strict();
+  .object({
+    ...ArLine,
+    /** Egyptian variant in Arabic script, and its transliteration. */
+    eg: z.string().min(1).optional(),
+    eg_tr: z.string().min(1).optional(),
+    note: Bilingual.optional(),
+    /** Huruf 1 lesson 1 only: a known loanword shown as a picture of a word, not read. */
+    display_only: z.boolean().optional(),
+  })
+  .strict()
+  .refine((e) => !e.eg === !e.eg_tr, { message: 'eg and eg_tr go together' });
 
-/** One pronunciation point: a label, words to play, and a short tip. */
+const ArPair = z.object({ ar: z.string().min(1), tr: z.string().min(1) }).strict();
+
+/** Bunyi: one pronunciation point with playable words and a tip. */
 const Sound = z
-  .object({ focus: z.string().min(1), words: z.array(z.string().min(1)).min(1).max(6), tip: Bilingual })
+  .object({
+    focus: z.string().min(1),
+    compare: z.string().min(1).optional(),
+    words: z.array(ArPair).min(1).max(6),
+    tip: Bilingual,
+  })
   .strict();
 
-/** A short exchange showing the structure in use. */
+/** Ngobrol: a short exchange, in Fusha or Egyptian. */
 const TalkLine = z
-  .object({ who: z.string().min(1), en: z.string().min(1), id: z.string().min(1), note: Bilingual.optional() })
+  .object({ who: z.string().min(1), ...ArLine, note: Bilingual.optional() })
+  .strict();
+const Talk = z
+  .object({ variety: z.enum(['fusha', 'eg']), lines: z.array(TalkLine).min(2).max(4) })
+  .strict();
+
+export const GlossaryEntry = z
+  .object({
+    ar: z.string().min(1),
+    tr: z.string().min(1),
+    id: z.string().min(1),
+    en: z.string().min(1).optional(),
+    gender: z.enum(['m', 'f']).optional(),
+    pos: z.enum(['noun', 'adj', 'verb', 'particle', 'pron', 'chunk', 'num', 'name']).optional(),
+    eg: z.string().min(1).optional(),
+    eg_tr: z.string().min(1).optional(),
+    root: z.string().regex(/^[ء-ي](-[ء-ي]){2,3}$/, 'roots look like ك-ت-ب').optional(),
+    /** A plural listed as a word (broken plurals are not taught before Easy 3). */
+    pl: z.boolean().optional(),
+    display_only: z.boolean().optional(),
+  })
+  .strict()
+  .refine((g) => !g.eg === !g.eg_tr, { message: 'eg and eg_tr go together' });
+
+const Review = z
+  .object({ by: z.string().min(1), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), eg_by: z.string().min(1).optional() })
   .strict();
 
 export const LessonFrontmatterSchema = z
@@ -152,41 +203,50 @@ export const LessonFrontmatterSchema = z
     rung: z.string(),
     order: z.number().int().min(1).max(12),
     status: z.enum(['draft', 'reviewed']),
+    review: Review.optional(),
     minutes: z.number().int().min(3).max(15),
-    title: Bilingual,
+    title: z.object({ id: z.string().min(1), en: z.string().min(1), ar: z.string().min(1) }).strict(),
     summary: Bilingual,
     introduces: z.array(z.string()).min(1),
     spiral: z.string(),
     visual: Visual.optional(),
     worked: z.array(Example).min(2).max(8).optional(),
     examples: z.array(Example).min(4).max(6),
-    pair: z.object({ off: z.string(), natural: z.string() }).strict(),
+    pair: z.object({ off: ArPair, natural: ArPair }).strict(),
     sound: Sound.optional(),
+    /** Mesir card note; the card itself is built from the examples that have eg. */
+    eg_note: Bilingual.optional(),
+    /** Kata card: loanword meaning shifts. */
     words: Bilingual.optional(),
-    talk: z.array(TalkLine).min(2).max(4).optional(),
+    talk: Talk.optional(),
+    /** Repeat-after sentence closing the Examples step. */
+    tirukan: z.object({ ...ArLine }).strict(),
     check: z.array(CheckItemSchema).min(4).max(6),
-    glossary: z
-      .array(z.object({ en: z.string().min(1), id: z.string().min(1) }).strict())
-      .min(6)
-      .max(12),
+    glossary: z.array(GlossaryEntry).min(3).max(12),
     next: z.string().nullable().optional(),
   })
   .strict()
   .refine((l) => l.visual || l.worked, {
     message: 'a lesson needs either a visual or a worked example for the See step',
-  });
+  })
+  .refine((l) => l.status !== 'reviewed' || !!l.review, { message: 'a reviewed lesson needs review.by and review.date' });
 
 export const RungSchema = z
   .object({
     id: z.string(),
     name: z.string(),
+    name_ar: z.string().min(1),
     tier: z.enum(['huruf', 'easy', 'medium', 'hard']),
     cefr: z.string(),
-    explain_lang: z.enum(['id', 'mixed', 'en']),
     status: z.enum(['live', 'soon']),
-    /** An optional rung (Starter) never becomes the learner's current rung on its own. */
+    /** An optional rung (Huruf) never becomes the learner's current rung on its own. */
     optional: z.boolean().default(false),
+    /** Notch count; must equal the number of lesson files once live. */
     lessons: z.number().int(),
+    harakat: z.enum(['full', 'partial', 'none']),
+    translit: z.enum(['always', 'on-request', 'off']),
+    /** New glossary words for the rung; content:check warns outside ±20%. */
+    words_target: z.number().int().min(0),
     description: Bilingual,
     topics: z.array(z.string()).min(1),
     threads: z.array(z.string()).default([]),
@@ -201,25 +261,92 @@ export const TestPoolSchema = z
     rung: z.string(),
     draw: z.number().int().default(16),
     pass: z.number().int().default(12),
-    items: z.array(CheckItemSchema).min(16),
+    items: z.array(CheckItemSchema).min(8),
   })
-  .strict();
+  .strict()
+  .refine((p) => p.items.length >= p.draw, { message: 'the pool needs at least draw items' })
+  .refine((p) => p.pass <= p.draw, { message: 'pass cannot exceed draw' });
 
-/** One short connected text per rung, using only that rung's inventory, with a few questions. */
+/** Baca dan dengar: one short Fusha text per rung, using only that rung's inventory, with a few questions. */
 export const ReadingSchema = z
   .object({
     rung: z.string(),
-    title: Bilingual,
-    text: z.string().min(1),
-    translation: z.string().min(1),
-    glossary: z.array(z.object({ en: z.string().min(1), id: z.string().min(1) }).strict()).max(8).default([]),
+    title: z.object({ id: z.string().min(1), en: z.string().min(1), ar: z.string().min(1) }).strict(),
+    ...ArLine,
+    glossary: z.array(GlossaryEntry).max(8).default([]),
     items: z.array(CheckItemSchema).min(2).max(4),
   })
   .strict();
 
-/** Words per rung. An entry may be one word or a flow list of words, for compact groups. */
-export const LexiconSchema = z.record(
-  z.array(z.union([z.string(), z.array(z.string())])).transform((xs) => xs.flat().map(String)),
-);
+/** Ngobrol capstone: a 6–10 line Egyptian dialogue with audio, transliteration and translation. */
+export const DialogueSchema = z
+  .object({
+    rung: z.string(),
+    variety: z.enum(['fusha', 'eg']).default('eg'),
+    title: z.object({ id: z.string().min(1), en: z.string().min(1), ar: z.string().min(1) }).strict(),
+    lines: z.array(TalkLine).min(6).max(10),
+    note: Bilingual.optional(),
+    items: z.array(CheckItemSchema).min(3).max(4),
+  })
+  .strict();
+
+export const PLACEMENT_SECTIONS = ['forms', 'reading', 'harakat', 'sounds'] as const;
+
+export const PlacementSchema = z
+  .object({
+    items: z.array(CheckItemSchema).length(20),
+    thresholds: z.object({ easy1: z.number().int(), huruf2: z.number().int() }).strict(),
+  })
+  .strict()
+  .superRefine((p, ctx) => {
+    p.items.forEach((item, i) => {
+      if (!item.section) ctx.addIssue({ code: 'custom', path: ['items', i, 'section'], message: 'placement items need a section' });
+    });
+  });
+
+export const LetterSchema = z
+  .object({
+    letter: z.string().min(1),
+    name_id: z.string().min(1),
+    name_ar: z.string().min(1),
+    tr: z.string(),
+    joins_left: z.boolean(),
+    family: z.string(),
+    /** Display forms with tatweel (بـ ـبـ ـب), never presentation-form code points. */
+    forms: z.object({ isolated: z.string(), initial: z.string(), medial: z.string(), final: z.string() }).strict(),
+    example_words: z.object({ initial: z.string(), medial: z.string(), final: z.string() }).strict(),
+    makhraj: z.string(),
+    sun: z.boolean(),
+    /** The Huruf 1 lesson that introduces the letter. */
+    lesson: z.number().int().min(1).max(12),
+  })
+  .strict();
+export const LettersSchema = z.array(LetterSchema).min(28);
+
+export const MakhrajSchema = z
+  .array(
+    z
+      .object({
+        id: z.string(),
+        label_id: z.string(),
+        label_en: z.string(),
+        x: z.number(),
+        y: z.number(),
+      })
+      .strict(),
+  )
+  .min(1);
+
+export const LexiconEntry = z
+  .object({
+    ar: z.string().min(1),
+    pos: z.enum(['noun', 'adj', 'verb', 'particle', 'pron', 'chunk', 'num', 'name']),
+    gender: z.enum(['m', 'f']).optional(),
+    rung: z.string(),
+    root: z.string().optional(),
+  })
+  .strict();
+
+export const LexiconSchema = z.array(LexiconEntry);
 
 export const SECTION_HEADINGS = ['concept.id', 'concept.en', 'contrast.id', 'contrast.en'] as const;

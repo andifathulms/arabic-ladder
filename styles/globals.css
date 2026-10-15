@@ -286,3 +286,8 @@
 .notch-settle {
   animation: notch-settle var(--m-settle-d) var(--ease) both;
 }
+@keyframes tirukan-fill {
+  from {
+    transform: scaleX(0);
+  }
+}

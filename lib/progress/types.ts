@@ -1,6 +1,5 @@
 export type Settings = {
   uiLang: 'id' | 'en';
-  explain: 'rung' | 'id' | 'en';
   voice: 'female' | 'male';
   rate: 0.75 | 1;
   sfx: boolean;

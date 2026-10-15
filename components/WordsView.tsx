@@ -2,35 +2,67 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import type { LessonSummary } from '@/lib/types';
+import type { GlossaryEntry, LessonSummary, Rung } from '@/lib/types';
 import { missedCount } from '@/lib/progress/derive';
 import { lessonHref } from '@/lib/routes';
+import { looseKey, hasArabic } from '@/lib/arabic/text';
+import { translitKey } from '@/lib/arabic/translit';
 import { useProgress, useT } from './ProgressProvider';
 import { PageShell } from './ui/PageShell';
 import { PlayButton } from './lesson/PlayButton';
 import { IconBook, IconSearch } from './ui/Icon';
 import { usePlay } from './useSpeech';
+import { ArIsland } from './ar/ArIsland';
+import { Translit } from './ar/Translit';
+import { EgChip } from './ar/EgChip';
 
-export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
-  const { t } = useT();
+/** Search accepts Arabic with or without harakat, transliteration, or Indonesian (PRD §5.7). */
+export function matchesWord(g: GlossaryEntry, q: string): boolean {
+  const needle = q.trim();
+  if (!needle) return true;
+  if (hasArabic(needle)) {
+    const k = looseKey(needle);
+    return looseKey(g.ar).includes(k) || (!!g.eg && looseKey(g.eg).includes(k));
+  }
+  const n = translitKey(needle);
+  const plain = (s: string) => translitKey(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return (
+    translitKey(g.tr).includes(n) ||
+    plain(g.tr).includes(plain(needle)) ||
+    g.id.toLowerCase().includes(needle.toLowerCase()) ||
+    (g.en ?? '').toLowerCase().includes(needle.toLowerCase())
+  );
+}
+
+type Props = { lessons: LessonSummary[]; rungs: Rung[]; rootsFrom?: string };
+
+export function WordsView({ lessons, rungs, rootsFrom = 'easy-3' }: Props) {
+  const { t, lang } = useT();
   const progress = useProgress();
-  const speak = usePlay();
+  const play = usePlay();
   const [q, setQ] = useState('');
   const [only, setOnly] = useState<string | null>(null);
   const [mistakes, setMistakes] = useState(false);
 
-  const opened = lessons.filter((l) => progress.opened.includes(l.id)).sort((a, b) => a.order - b.order);
+  const rungIndex = (id: string) => rungs.findIndex((r) => r.id === id);
+  const rungName = (id: string) => rungs.find((r) => r.id === id)?.name ?? id;
+  // Roots are shown once Easy 3 has introduced them.
+  const showRoots = Object.keys(progress.lessons).some((id) => {
+    const l = lessons.find((x) => x.id === id);
+    return l && rungIndex(l.rung) >= rungIndex(rootsFrom);
+  });
+  const opened = lessons
+    .filter((l) => progress.opened.includes(l.id))
+    .sort((a, b) => rungIndex(a.rung) - rungIndex(b.rung) || a.order - b.order);
   const total = opened.reduce((n, l) => n + l.glossary.length, 0);
-  const groups = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return opened
-      .filter((l) => (!only || l.id === only) && (!mistakes || missedCount(l, progress) > 0))
-      .map((l) => ({
-        l,
-        words: l.glossary.filter((g) => !needle || g.en.toLowerCase().includes(needle) || g.id.toLowerCase().includes(needle)),
-      }))
-      .filter((g) => g.words.length);
-  }, [opened, q, only, mistakes, progress]);
+  const groups = useMemo(
+    () =>
+      opened
+        .filter((l) => (!only || l.id === only) && (!mistakes || missedCount(l, progress) > 0))
+        .map((l) => ({ l, words: l.glossary.filter((g) => matchesWord(g, q)) }))
+        .filter((g) => g.words.length),
+    [opened, q, only, mistakes, progress],
+  );
 
   const chip = (on: boolean) =>
     `min-h-touch shrink-0 rounded-full px-4 text-small font-bold transition-colors duration-quick ${
@@ -38,10 +70,7 @@ export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
     }`;
 
   return (
-    <PageShell
-      title={t('words.title')}
-      subtitle={total > 0 ? t('words.subtitle', { n: total, l: opened.length }) : undefined}
-    >
+    <PageShell title={t('words.title')} subtitle={total > 0 ? t('words.subtitle', { n: total, l: opened.length }) : undefined}>
       {total === 0 ? (
         <div className="card flex flex-col items-start gap-3 p-5">
           <span className="flex h-[48px] w-[48px] items-center justify-center rounded-md bg-paper-2 text-muted">
@@ -60,6 +89,7 @@ export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={t('words.searchPlaceholder')}
+                dir="auto"
                 className="min-h-touch min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-muted"
               />
             </label>
@@ -69,7 +99,7 @@ export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
               </button>
               {opened.map((l) => (
                 <button key={l.id} type="button" aria-pressed={only === l.id} className={chip(only === l.id)} onClick={() => setOnly(l.id)}>
-                  <span className="tnum">{l.order}</span> · <span lang="en">{l.title.en}</span>
+                  {rungName(l.rung)} · <span className="tnum">{l.order}</span>
                 </button>
               ))}
             </div>
@@ -91,25 +121,44 @@ export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
               <section key={l.id} className="flex flex-col gap-2">
                 <h2 className="eyebrow">
                   <Link href={lessonHref(l)} className="text-muted no-underline hover:text-accent">
-                    {t('home.lessonN', { n: l.order })} · <span lang="en">{l.title.en}</span>
+                    {t('words.group', { rung: rungName(l.rung), n: l.order })} · {lang === 'en' ? l.title.en : l.title.id}
                   </Link>
                 </h2>
                 <ul className="card flex flex-col divide-y divide-rule overflow-hidden">
-                  {words.map((w) => {
-                    return (
-                      <li key={w.en} className="flex min-h-[60px] items-center gap-3 px-4 py-2">
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span lang="en" className="font-display text-body font-semibold">
-                            {w.en}
-                          </span>
-                          <span lang="id" className="id-text text-small">
-                            {w.id}
+                  {words.map((w) => (
+                    <li key={w.ar} className="flex min-h-[64px] items-center gap-3 px-4 py-2">
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="flex flex-wrap items-baseline gap-x-3">
+                          {/* Always fully vowelled here, whatever the rung's harakat level. */}
+                          <ArIsland size="small">{w.ar}</ArIsland>
+                          <Translit text={w.tr} />
+                          <span lang={lang === 'en' && w.en ? 'en' : 'id'} className="id-text text-small">
+                            {lang === 'en' ? (w.en ?? w.id) : w.id}
                           </span>
                         </span>
-                        <PlayButton text={w.en} onPlay={() => void speak(w.en)} small />
-                      </li>
-                    );
-                  })}
+                        {w.eg && (
+                          <span className="flex flex-wrap items-center gap-2">
+                            <EgChip />
+                            <ArIsland size="small" variety="eg">
+                              {w.eg}
+                            </ArIsland>
+                            {w.eg_tr && <Translit text={w.eg_tr} />}
+                          </span>
+                        )}
+                        {showRoots && w.root && (
+                          <span className="label text-muted">
+                            {t('words.root')} <ArIsland face="ui">{w.root}</ArIsland>
+                          </span>
+                        )}
+                      </span>
+                      {w.gender && (
+                        <span className="label rounded-sm bg-accent-soft px-2 py-[2px] text-accent" title={t(w.gender === 'm' ? 'words.genderM' : 'words.genderF')}>
+                          {w.gender}
+                        </span>
+                      )}
+                      <PlayButton text={w.ar} onPlay={() => void play(w.ar)} small />
+                    </li>
+                  ))}
                 </ul>
               </section>
             ))

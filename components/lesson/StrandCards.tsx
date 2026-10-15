@@ -4,25 +4,122 @@ import { useState } from 'react';
 import type { Bilingual, Lesson } from '@/lib/types';
 import { Prose } from './Prose';
 import { PlayButton } from './PlayButton';
-import { Sentence } from './Sentence';
+import { ArIsland } from '../ar/ArIsland';
+import { ArSentence } from '../ar/ArSentence';
+import { EgChip } from '../ar/EgChip';
+import { Translit } from '../ar/Translit';
 import { usePlay } from '../useSpeech';
 import { useT } from '../ProgressProvider';
 
-type Lang = 'id' | 'en';
+/** Bunyi: one pronunciation point, the focus sound as big glyphs, words to play, and a tip. */
+export function SoundCard({ sound, thumb }: { sound: NonNullable<Lesson['sound']>; thumb?: React.ReactNode }) {
+  const { t, lang } = useT();
+  const play = usePlay();
+  const [playing, setPlaying] = useState<string | null>(null);
+  const run = async (s: string) => {
+    setPlaying(s);
+    await play(s);
+    setPlaying(null);
+  };
+  const glyphs = [sound.focus, sound.compare].filter(Boolean) as string[];
+  return (
+    <section className="flex flex-col gap-4 rounded-lg bg-paper-2 p-5" aria-labelledby="sound-title">
+      <h3 id="sound-title" className="eyebrow">
+        {t('lesson.sound')}
+      </h3>
+      <div className="flex flex-wrap items-center gap-5">
+        <div className="flex items-center gap-3">
+          {glyphs.map((g, i) => (
+            <span key={g} className="flex items-center gap-1">
+              {i > 0 && (
+                <span aria-hidden className="pe-2 text-h2 text-muted">
+                  ·
+                </span>
+              )}
+              <ArIsland size="glyph" face="display" className="leading-none">
+                {g}
+              </ArIsland>
+              <PlayButton text={g} onPlay={() => run(g)} playing={playing === g} small />
+            </span>
+          ))}
+        </div>
+        {thumb}
+      </div>
+      <ul className="flex flex-wrap gap-2">
+        {sound.words.map((w) => (
+          <li key={w.ar} className="card flex items-center gap-2 py-1 pe-1 ps-3">
+            <span className="flex flex-col">
+              <ArIsland size="small">{w.ar}</ArIsland>
+              <Translit text={w.tr} />
+            </span>
+            <PlayButton text={w.ar} onPlay={() => run(w.ar)} playing={playing === w.ar} small />
+          </li>
+        ))}
+      </ul>
+      <Prose text={lang === 'en' ? sound.tip.en : sound.tip.id} lang={lang} />
+    </section>
+  );
+}
 
-/** A short exchange using the lesson's structure. Shown on the Examples step. */
-export function TalkCard({ talk }: { talk: NonNullable<Lesson['talk']> }) {
+/** Mesir: how Egyptians say the examples, Fusha and Egyptian side by side. */
+export function MesirCard({ examples, note }: { examples: Lesson['examples']; note?: Bilingual }) {
+  const { t, lang } = useT();
+  const pairs = examples.filter((e) => e.eg && e.eg_tr);
+  if (!pairs.length) return null;
+  return (
+    <section className="card flex flex-col gap-4 border-s-[3px] border-eg p-5" aria-labelledby="mesir-title">
+      <h3 id="mesir-title" className="label flex items-center gap-2 text-eg">
+        <span aria-hidden>●</span> {t('lesson.mesir')}
+      </h3>
+      <ul className="flex flex-col gap-5">
+        {pairs.map((e) => (
+          <li key={e.ar} className="grid gap-3 min-[640px]:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <span className="label text-muted">{t('lesson.fusha')}</span>
+              <ArSentence ar={e.ar} tr={e.tr} size="body" showTranslit />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="label text-eg">{t('lesson.mesirRow')}</span>
+              <ArSentence ar={e.eg!} tr={e.eg_tr} size="body" variety="eg" chip={false} showTranslit />
+            </div>
+          </li>
+        ))}
+      </ul>
+      {note && <p className="text-small text-ink">{lang === 'en' ? note.en : note.id}</p>}
+    </section>
+  );
+}
+
+/** Kata: loanword meaning shifts between Indonesian and Arabic. */
+export function WordsCard({ words }: { words: Bilingual }) {
   const { t, lang } = useT();
   return (
-    <section className="flex flex-col gap-4 rounded-lg bg-paper-2 p-5" aria-labelledby="talk-title">
-      <h3 id="talk-title" className="eyebrow">
-        {t('lesson.talk')}
+    <section className="flex flex-col gap-2 rounded-lg bg-accent-soft p-5" aria-labelledby="words-title">
+      <h3 id="words-title" className="eyebrow">
+        {t('lesson.words')}
+      </h3>
+      <Prose text={lang === 'en' ? words.en : words.id} lang={lang} />
+    </section>
+  );
+}
+
+/** Ngobrol: a short exchange in Fusha or Egyptian, marked as which. */
+export function TalkCard({ talk }: { talk: NonNullable<Lesson['talk']> }) {
+  const { t, lang } = useT();
+  const eg = talk.variety === 'eg';
+  return (
+    <section
+      className={`flex flex-col gap-4 rounded-lg bg-paper-2 p-5 ${eg ? 'border-s-[3px] border-eg' : ''}`}
+      aria-labelledby="talk-title"
+    >
+      <h3 id="talk-title" className="eyebrow flex items-center gap-2">
+        {t('lesson.talk')} {eg ? <EgChip /> : <span className="text-muted">· {t('lesson.fusha')}</span>}
       </h3>
       <ol className="flex flex-col gap-4">
-        {talk.map((line, i) => (
+        {talk.lines.map((line, i) => (
           <li key={i} className="flex flex-col gap-1">
             <span className="label text-muted">{line.who}</span>
-            <Sentence en={line.en} id={line.id} size="body" />
+            <ArSentence ar={line.ar} tr={line.tr} id={line.id} en={line.en} size="body" variety={talk.variety} chip={false} />
             {line.note && (
               <p className="self-start rounded-sm bg-accent-soft px-3 py-1 text-small text-ink" role="note">
                 {lang === 'en' ? line.note.en : line.note.id}
@@ -31,49 +128,6 @@ export function TalkCard({ talk }: { talk: NonNullable<Lesson['talk']> }) {
           </li>
         ))}
       </ol>
-    </section>
-  );
-}
-
-/** One pronunciation point with words to play. Shown on the Examples step. */
-export function SoundCard({ sound, explain }: { sound: NonNullable<Lesson['sound']>; explain: Lang }) {
-  const { t } = useT();
-  const speak = usePlay();
-  const [playing, setPlaying] = useState<string | null>(null);
-  const play = async (w: string) => {
-    setPlaying(w);
-    await speak(w);
-    setPlaying(null);
-  };
-  return (
-    <section className="flex flex-col gap-3 rounded-lg border border-rule p-5" aria-labelledby="sound-title">
-      <h3 id="sound-title" className="eyebrow flex flex-wrap items-baseline gap-2">
-        {t('lesson.sound')} <span className="font-mono normal-case tracking-normal text-accent">{sound.focus}</span>
-      </h3>
-      <ul className="flex flex-wrap gap-2">
-        {sound.words.map((w) => (
-          <li key={w} className="card flex items-center gap-1 py-1 ps-3 pe-1">
-            <span lang="en" className="font-display font-semibold">
-              {w}
-            </span>
-            <PlayButton text={w} onPlay={() => play(w)} playing={playing === w} small />
-          </li>
-        ))}
-      </ul>
-      <Prose text={explain === 'en' ? sound.tip.en : sound.tip.id} lang={explain} />
-    </section>
-  );
-}
-
-/** Where Indonesian and English split a meaning differently. Shown on the Contrast step. */
-export function WordsCard({ words, explain }: { words: Bilingual; explain: Lang }) {
-  const { t } = useT();
-  return (
-    <section className="flex flex-col gap-2 rounded-lg bg-accent-soft p-5" aria-labelledby="words-title">
-      <h3 id="words-title" className="eyebrow">
-        {t('lesson.words')}
-      </h3>
-      <Prose text={explain === 'en' ? words.en : words.id} lang={explain} />
     </section>
   );
 }

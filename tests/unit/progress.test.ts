@@ -81,7 +81,7 @@ describe('store', () => {
 });
 
 describe('derived state', () => {
-  const rung = { id: 'easy-1', name: 'Easy 1', status: 'live', lessons: 8, tier: 'easy', cefr: 'A1', explain_lang: 'id', description: { id: '', en: '' }, topics: ['x'], threads: [], inventory: [], optional: false } as Rung;
+  const rung = { id: 'easy-1', name: 'Easy 1', name_ar: 'x', status: 'live', lessons: 8, tier: 'easy', cefr: 'A1', harakat: 'full', translit: 'always', words_target: 0, description: { id: '', en: '' }, topics: ['x'], threads: [], inventory: [], optional: false } as Rung;
   const mk = (n: number): LessonSummary => ({
     id: `L${n}`,
     slug: `0${n}-x`,
@@ -89,10 +89,11 @@ describe('derived state', () => {
     order: n,
     status: 'draft',
     minutes: 6,
-    title: { en: `L${n}`, id: `L${n}` },
+    title: { en: `L${n}`, id: `L${n}`, ar: 'ا' },
+    keyword: null,
     checkIds: [`L${n}-c1`],
-    resume: ['s0', 's1', 's2', 's3', 's4', 's5'].map((s) => `${s}-${n}`),
-    checkTexts: [`check-${n}`],
+    resume: ['s0', 's1', 's2', 's3', 's4', 's5'].map((s) => ({ text: `${s}-${n}` })),
+    checkTexts: [{ text: `check-${n}` }],
     glossary: [],
   });
   const lessons = [mk(1), mk(2)];
@@ -104,7 +105,7 @@ describe('derived state', () => {
   it('continues the open lesson at its step, quoting the check item', () => {
     const p = emptyState();
     p.lessons.L1 = { step: 4, furthest: 4, checkIndex: 0, completed: false, lastOpened: 5 };
-    expect(continueTarget([rung], lessons, p)).toMatchObject({ kind: 'lesson', step: 4, text: 'check-1' });
+    expect(continueTarget([rung], lessons, p)).toMatchObject({ kind: 'lesson', step: 4, text: { text: 'check-1' } });
   });
 
   it('moves to the next lesson after finishing one', () => {

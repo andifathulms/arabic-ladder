@@ -3,7 +3,6 @@ import type { ProgressState, Settings } from './types';
 
 export const DEFAULT_SETTINGS: Settings = {
   uiLang: 'id',
-  explain: 'rung',
   voice: 'female',
   rate: 1,
   sfx: true,

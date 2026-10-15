@@ -8,6 +8,10 @@ import { IconArrowRight } from '../ui/Icon';
 import { useT } from '../ProgressProvider';
 import { STEP_KEYS } from '../lesson/steps';
 import { Contours } from '../ui/Contours';
+import type { Quote } from '@/lib/types';
+import { hasArabic } from '@/lib/arabic/text';
+import { ArIsland } from '../ar/ArIsland';
+import { Translit } from '../ar/Translit';
 
 /** Sets the last word in brass italic, the way the board marks what matters. */
 export function Accented({ text, tone = 'text-brass' }: { text: string; tone?: string }) {
@@ -21,22 +25,42 @@ export function Accented({ text, tone = 'text-brass' }: { text: string; tone?: s
   );
 }
 
-/** A quoted sentence; a ___ blank becomes a gold underline on the board. */
-function BoardSentence({ text }: { text: string }) {
-  const parts = text.split('___');
+/** A ___ blank on the board: a brass underline, announced as "blank". */
+function Blank({ width }: { width: string }) {
   return (
-    <p className="font-display text-h1 font-medium leading-tight tracking-[-0.01em] text-board-ink" lang="en">
-      {parts.map((p, i) => (
-        <span key={i}>
-          {p}
-          {i < parts.length - 1 && (
-            <>
-              <span aria-hidden className="mx-[2px] inline-block h-[0.9em] w-[2.4em] border-b-[3px] align-[-0.1em]" style={{ borderColor: 'var(--brass)' }} />
-              <span className="sr-only">blank</span>
-            </>
-          )}
-        </span>
-      ))}
+    <>
+      <span aria-hidden className={`mx-[2px] inline-block h-[0.9em] ${width} border-b-[3px] border-brass align-[-0.1em]`} />
+      <span className="sr-only">blank</span>
+    </>
+  );
+}
+
+/**
+ * The quoted resume line. Arabic is set in Naskh at --t-ar-body in an RTL island, with the
+ * transliteration beneath when the rung shows it; Latin lines keep the display serif.
+ */
+function BoardSentence({ quote, showTr }: { quote: Quote; showTr: boolean }) {
+  const parts = quote.text.split('___');
+  const withBlanks = (w: string) =>
+    parts.map((p, i) => (
+      <span key={i}>
+        {p}
+        {i < parts.length - 1 && <Blank width={w} />}
+      </span>
+    ));
+  if (hasArabic(quote.text)) {
+    return (
+      <div className="flex flex-col gap-1">
+        <ArIsland block as="p" size="body" className="text-board-ink">
+          {withBlanks('w-[3em]')}
+        </ArIsland>
+        {showTr && quote.tr && <Translit text={quote.tr} onBoard />}
+      </div>
+    );
+  }
+  return (
+    <p className="font-display text-h1 font-medium leading-tight tracking-[-0.01em] text-board-ink" lang="id">
+      {withBlanks('w-[2.4em]')}
     </p>
   );
 }
@@ -113,7 +137,7 @@ export function ContinueCard({ target, firstLessonHref, starterHref, rungs }: Ca
         <span aria-hidden> · {t(STEP_KEYS[step])}</span>
         {step > 0 && <span className="sr-only"> · {t('home.step', { n: step + 1 })}</span>}
       </p>
-      <BoardSentence text={text} />
+      <BoardSentence quote={text} showTr={rung?.translit === 'always'} />
       <p className={`text-small text-board-muted ${lang === 'en' ? '' : 'italic'}`} lang={lang}>
         {lang === 'en' ? lesson.title.en : lesson.title.id}
       </p>
