@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { VISUAL_IDS } from '../visualIds';
+import { MARK_NAMES, markOn } from '../arabic/marks';
 
 const Bilingual = z.object({ id: z.string().min(1), en: z.string().min(1) }).strict();
 
@@ -12,9 +13,10 @@ const itemBase = {
   cue: z.string().optional(),
   why: Bilingual,
   from: z.string().optional(),
+  /** exact keeps harakat and hamza seats; loose (default) ignores them. */
+  match: z.enum(['exact', 'loose']).optional(),
 };
 
-const answerInOptions = (v: { options: string[]; answer: string }) => v.options.includes(v.answer);
 const optionsMsg = { message: 'answer must be one of the options' };
 const Options = z.array(z.string().min(1)).min(2).max(4);
 
@@ -48,22 +50,60 @@ export const FixItem = z
   .object({ ...itemBase, type: z.literal('fix'), wrong: z.string(), options: Options, answer: z.string() })
   .strict();
 
-/** Played through speech; the sentence is shown only when the browser has no English voice. */
+/** Played from a recording or speech; the text is shown only when nothing can play it. */
 export const ListenItem = z
   .object({
     ...itemBase,
     type: z.literal('listen'),
     prompt: z.string().optional(),
     audio: z.string().min(1),
+    variety: z.enum(['fusha', 'eg']).default('fusha'),
     options: Options,
     answer: z.string(),
   })
   .strict();
 
+/** An Arabic word or phrase is shown; pick its transliteration or meaning. Never shows transliteration. */
+export const ReadItem = z
+  .object({ ...itemBase, type: z.literal('read'), prompt: z.string().optional(), ar: z.string().min(1), options: Options, answer: z.string() })
+  .strict();
+
+/**
+ * Tap isolated letter tiles in order; the answer line joins them as a real word.
+ * `letters` are the answer letters in order; `distractors` are extra tiles. With `dictation`,
+ * the word is played and not shown (imla').
+ */
+export const SpellItem = z
+  .object({
+    ...itemBase,
+    type: z.literal('spell'),
+    prompt: z.string().optional(),
+    letters: z.array(z.string().min(1)).min(2).max(10),
+    distractors: z.array(z.string().min(1)).max(4).default([]),
+    answer: z.string().min(1),
+    audio: z.string().optional(),
+    dictation: z.boolean().optional(),
+  })
+  .strict();
+
+/** A vowelled word with one letter's mark hidden; pick the mark. */
+export const MarkItem = z
+  .object({
+    ...itemBase,
+    type: z.literal('mark'),
+    prompt: z.string().optional(),
+    ar: z.string().min(1),
+    /** Index of the base letter (0 = first letter, marks not counted). */
+    target: z.number().int().min(0),
+    options: z.array(z.enum(MARK_NAMES)).min(2).max(4),
+    answer: z.enum(MARK_NAMES),
+  })
+  .strict();
+
 export const CheckItemSchema = z
-  .discriminatedUnion('type', [ChoiceItem, GapItem, OrderItem, SceneItem, FixItem, ListenItem])
+  .discriminatedUnion('type', [ChoiceItem, GapItem, OrderItem, SceneItem, FixItem, ListenItem, ReadItem, SpellItem, MarkItem])
   .superRefine((item, ctx) => {
-    if ('options' in item && !answerInOptions(item)) {
+    if ('options' in item && !(item.options as string[]).includes(item.answer as string)) {
       ctx.addIssue({ code: 'custom', path: ['answer'], ...optionsMsg });
     }
     if (item.type === 'gap' && item.prompt.split('___').length !== 2) {
@@ -75,6 +115,19 @@ export const CheckItemSchema = z
         if (sorted(a) !== sorted(item.tiles)) {
           ctx.addIssue({ code: 'custom', path: ['answer'], message: 'answer must use exactly the tiles' });
         }
+      }
+    }
+    if (item.type === 'spell' && item.letters.join('').normalize('NFC') !== item.answer.normalize('NFC')) {
+      ctx.addIssue({ code: 'custom', path: ['answer'], message: 'spell answer must be exactly the joined letters, in order' });
+    }
+    if (item.type === 'spell' && item.dictation && !item.audio) {
+      ctx.addIssue({ code: 'custom', path: ['audio'], message: 'dictation needs audio' });
+    }
+    if (item.type === 'mark') {
+      const actual = markOn(item.ar, item.target);
+      if (actual === null) ctx.addIssue({ code: 'custom', path: ['target'], message: 'target is not a letter of the word' });
+      else if (actual !== item.answer) {
+        ctx.addIssue({ code: 'custom', path: ['answer'], message: `the word carries ${actual} on that letter, not ${item.answer}` });
       }
     }
   });

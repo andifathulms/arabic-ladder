@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { grade, sameOrder } from '@/lib/check/grade';
+import { compare, grade, matchOf, sameOrder } from '@/lib/check/grade';
 import { drawReview, drawTest } from '@/lib/check/draw';
 import { nextBox } from '@/lib/check/leitner';
 import { emptyState } from '@/lib/progress/defaults';
@@ -18,7 +18,7 @@ describe('grade', () => {
   });
 
   it('grades listen items by the option chosen, not the audio text', () => {
-    const l: CheckItem = { id: 'l', type: 'listen', audio: 'The doctors are busy.', options: ['The doctors are busy.', 'The doctor is busy.'], answer: 'The doctors are busy.', why };
+    const l: CheckItem = { id: 'l', type: 'listen', variety: 'fusha', audio: 'The doctors are busy.', options: ['The doctors are busy.', 'The doctor is busy.'], answer: 'The doctors are busy.', why };
     expect(grade(l, 'The doctors are busy.').correct).toBe(true);
     expect(grade(l, 'The doctor is busy.').correct).toBe(false);
   });
@@ -37,10 +37,48 @@ describe('grade', () => {
     expect(grade(o, ['am', 'I', 'tired']).correct).toBe(false);
   });
 
-  it('order comparison is case-sensitive for the first word only', () => {
-    expect(sameOrder(['The', 'Ball'], ['The', 'ball'])).toBe(true);
-    expect(sameOrder(['the', 'ball'], ['The', 'ball'])).toBe(false);
+  it('order comparison has no case rule and ignores trailing punctuation in both scripts', () => {
+    expect(sameOrder(['the', 'ball'], ['The', 'ball'])).toBe(true);
     expect(sameOrder(['The', 'ball?'], ['The', 'ball'])).toBe(true);
+    expect(sameOrder(['هٰذَا', 'كِتَابٌ.'], ['هٰذَا', 'كِتَابٌ'])).toBe(true);
+    expect(sameOrder(['مَا', 'هٰذَا؟'], ['مَا', 'هٰذَا'])).toBe(true);
+    expect(sameOrder(['كِتَابٌ', 'هٰذَا'], ['هٰذَا', 'كِتَابٌ'])).toBe(false);
+  });
+});
+
+describe('Arabic grading', () => {
+  it('exact keeps harakat; loose ignores harakat and hamza seats', () => {
+    expect(compare('كِتَابٌ', 'كتاب', 'loose')).toBe(true);
+    expect(compare('كِتَابٌ', 'كتاب', 'exact')).toBe(false);
+    expect(compare('إِلَى', 'الي', 'loose')).toBe(true);
+    expect(compare('بَ', 'بِ', 'exact')).toBe(false);
+    expect(compare('كِتَابٌ', 'كِتَابٌ', 'exact')).toBe(true);
+  });
+  it('normalises Arabic punctuation and tatweel', () => {
+    expect(compare('ما هذا؟', 'ما هـذا?', 'exact')).toBe(true);
+  });
+  it('never lets a harakat-only difference pass in a loose item', () => {
+    const c: CheckItem = { id: 'h', type: 'choice', prompt: 'p', options: ['بَ', 'بِ', 'بُ'], answer: 'بِ', why };
+    expect(matchOf(c)).toBe('exact');
+    expect(grade(c, 'بَ').correct).toBe(false);
+    expect(grade(c, 'بِ').correct).toBe(true);
+  });
+  it('treats transliteration options as Latin: case-insensitive, ʿ ʾ and apostrophes equal', () => {
+    const r: CheckItem = { id: 'r', type: 'read', ar: 'سَأَلَ', options: ['saʾala', 'salla'], answer: 'saʾala', why };
+    expect(grade(r, 'saʾala').correct).toBe(true);
+    expect(compare("Sa'ala", 'saʾala')).toBe(true);
+    expect(grade(r, 'salla').correct).toBe(false);
+  });
+  it('grades spell by the joined, normalised letters', () => {
+    const s: CheckItem = { id: 's', type: 'spell', letters: ['ك', 'ت', 'ا', 'ب'], distractors: ['ن'], answer: 'كتاب', why };
+    expect(grade(s, ['ك', 'ت', 'ا', 'ب']).correct).toBe(true);
+    expect(grade(s, 'كتاب').correct).toBe(true);
+    expect(grade(s, ['ك', 'ا', 'ت', 'ب']).correct).toBe(false);
+  });
+  it('grades mark by the mark name', () => {
+    const m: CheckItem = { id: 'm', type: 'mark', ar: 'دَرْسٌ', target: 1, options: ['fatha', 'sukun', 'kasra'], answer: 'sukun', why };
+    expect(grade(m, 'sukun').correct).toBe(true);
+    expect(grade(m, 'fatha').correct).toBe(false);
   });
 });
 

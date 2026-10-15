@@ -89,6 +89,7 @@ describe('CheckItemView (listen)', () => {
   const listen: CheckItem = {
     id: 'l1',
     type: 'listen',
+    variety: 'fusha',
     audio: "I'm tired.",
     options: ["I'm tired.", 'I tired.'],
     answer: "I'm tired.",

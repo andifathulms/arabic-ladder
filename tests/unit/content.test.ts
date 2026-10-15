@@ -46,6 +46,22 @@ describe('check item schema', () => {
     const r = CheckItemSchema.safeParse({ id: 'a', type: 'listen', audio: 'x', options: ['a', 'b'], answer: 'x', why });
     expect(r.success).toBe(false);
   });
+  it('requires a spell answer to be exactly the joined letters', () => {
+    const ok = CheckItemSchema.safeParse({ id: 'a', type: 'spell', letters: ['ب', 'ي', 'ت'], answer: 'بيت', why });
+    expect(ok.success).toBe(true);
+    const bad = CheckItemSchema.safeParse({ id: 'a', type: 'spell', letters: ['ب', 'ي', 'ت'], answer: 'تيب', why });
+    expect(bad.success).toBe(false);
+  });
+  it('requires dictation to have audio', () => {
+    const r = CheckItemSchema.safeParse({ id: 'a', type: 'spell', letters: ['ب', 'ي', 'ت'], answer: 'بيت', dictation: true, why });
+    expect(r.success).toBe(false);
+  });
+  it('checks a mark answer against the word itself', () => {
+    const base = { id: 'a', type: 'mark', ar: 'دَرْسٌ', target: 1, options: ['fatha', 'sukun'], why };
+    expect(CheckItemSchema.safeParse({ ...base, answer: 'sukun' }).success).toBe(true);
+    expect(CheckItemSchema.safeParse({ ...base, answer: 'fatha' }).success).toBe(false);
+    expect(CheckItemSchema.safeParse({ ...base, target: 9, answer: 'sukun' }).success).toBe(false);
+  });
   it('requires order answers to use the tiles', () => {
     const r = CheckItemSchema.safeParse({ id: 'a', type: 'order', tiles: ['a', 'b'], answer: ['a', 'c'], why });
     expect(r.success).toBe(false);

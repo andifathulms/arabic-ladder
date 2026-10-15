@@ -39,6 +39,12 @@ function sentencesOf(item: CheckItem): string[] {
       return [item.wrong, ...item.options];
     case 'listen':
       return [item.audio, ...item.options];
+    case 'read':
+      return [item.ar, ...item.options];
+    case 'spell':
+      return [item.answer];
+    case 'mark':
+      return [item.ar];
   }
 }
 
