@@ -1,6 +1,6 @@
 // UI strings, Bahasa Indonesia (default). Informal-standard: kamu, not Anda.
 export const id = {
-  'app.name': 'English Ladder',
+  'app.name': 'Arabic Ladder',
   'nav.home': 'Tangga',
   'nav.settings': 'Pengaturan',
   'nav.words': 'Kata-kataku',
@@ -148,7 +148,7 @@ export const id = {
   'settings.export': 'Ekspor progres',
   'settings.import': 'Impor progres',
   'settings.importOk': 'Progres berhasil diimpor.',
-  'settings.importFail': 'File ini tidak bisa dibaca sebagai progres English Ladder.',
+  'settings.importFail': 'File ini tidak bisa dibaca sebagai progres Arabic Ladder.',
   'settings.reset': 'Hapus semua progres',
   'settings.resetConfirm': 'Ya, hapus semua progres di browser ini',
   'settings.resetCancel': 'Batal',
@@ -183,7 +183,7 @@ export const id = {
   'me.weekHint': 'Titik terisi menandai hari kamu belajar.',
   'me.more': 'Lainnya',
   'me.settingsHint': 'Bahasa, suara, tampilan dan cadangan progres',
-  'me.aboutHint': 'Cara kerja English Ladder dan arti A1 sampai C1',
+  'me.aboutHint': 'Cara kerja Arabic Ladder dan arti Huruf sampai B2+',
   'review.emptyTitle': 'Belum ada soal untuk diulang',
   'review.readyTitle': 'Lima soal, sekitar dua menit',
   'home.greet.morning': 'Selamat pagi.',
@@ -224,7 +224,7 @@ export const id = {
   'settings.voice.female': 'Perempuan',
   'settings.voice.male': 'Laki-laki',
   'settings.voiceSample': 'Coba suara',
-  'settings.voiceSampleText': 'Hello! This is your English Ladder voice. Is it clear?',
+  'settings.voiceSampleText': 'Hello! This is your Arabic Ladder voice. Is it clear?',
   'settings.voiceUsing': 'Memakai suara: {name}',
 } as const;
 

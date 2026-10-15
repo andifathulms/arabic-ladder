@@ -3,17 +3,17 @@
 import { useT } from './ProgressProvider';
 import { PageShell } from './ui/PageShell';
 
-const REPO = 'https://github.com/andifathulms/english-ladder';
+const REPO = 'https://github.com/andifathulms/arabic-ladder';
 
 const copy = {
   id: [
     {
       h: 'Apa ini',
-      p: 'English Ladder adalah kursus bahasa Inggris bertingkat untuk penutur bahasa Indonesia. Ada sembilan anak tangga dari pemula sampai mahir, ditambah Starter untuk yang benar-benar baru mulai. Tiap pelajaran pendek, menunjukkan tata bahasa lewat gambar yang bisa kamu sentuh, dan selalu bilang apa yang dilakukan bahasa Indonesia secara berbeda.',
+      p: 'Arabic Ladder adalah kursus bahasa Arab bertingkat untuk penutur bahasa Indonesia, mulai dari nol: belum kenal huruf, belum kenal bunyi, belum kenal kata. Ada sebelas anak tangga, dari huruf pertama sampai membaca teks Arab tanpa harakat. Fusha menjadi tulang punggungnya, dan bahasa Mesir menjadi untaian percakapannya.',
     },
     {
       h: 'Tentang CEFR',
-      p: 'CEFR adalah skala internasional untuk kemampuan bahasa: A1 dan A2 untuk pemula, B1 dan B2 untuk tingkat menengah, C1 dan C2 untuk mahir. Tiap anak tangga di sini memakai label CEFR supaya kamu tahu kira-kira di mana posisimu.',
+      p: 'CEFR adalah skala internasional untuk kemampuan bahasa, dari A1 sampai C2. Label CEFR di sini hanya panduan: penyelarasan CEFR untuk bahasa Arab belum semapan bahasa-bahasa Eropa. Untuk kebanyakan orang dewasa Indonesia, mencapai B2 butuh dua sampai tiga tahun belajar dengan tekun.',
     },
     {
       h: 'Progresmu',
@@ -21,21 +21,21 @@ const copy = {
     },
     {
       h: 'Cara pelajaran ditulis',
-      p: 'Pelajaran disusun dengan bantuan AI, lalu diperiksa oleh manusia sebelum ditandai siap. Pelajaran yang belum diperiksa diberi tanda Draft.',
+      p: 'Pelajaran disusun dengan bantuan AI, lalu diperiksa oleh guru bahasa Arab atau penutur asli sebelum ditandai siap. Baris bahasa Mesir diperiksa oleh penutur Mesir. Pelajaran yang belum diperiksa diberi tanda Draft.',
     },
     {
       h: 'Siapa yang membuat',
-      p: 'Dibuat oleh Fathul, untuk orang yang ingin naik pelan-pelan tanpa merasa dihakimi.',
+      p: 'Dibuat oleh Fathul, saudara dari English Ladder, untuk orang yang ingin naik pelan-pelan tanpa merasa dihakimi.',
     },
   ],
   en: [
     {
       h: 'What this is',
-      p: 'English Ladder is a levelled English course for Indonesian speakers. Nine rungs take you from beginner to advanced, plus an optional Starter for complete beginners. Each lesson is short, shows grammar through visuals you can touch, and always says what Indonesian does differently.',
+      p: 'Arabic Ladder is a levelled Arabic course for Indonesian speakers, starting from complete zero: no script, no sounds, no words. Eleven rungs take you from the first letter to reading Arabic without vowel marks. Fusha (Modern Standard Arabic) is the backbone, and Egyptian Arabic is the spoken strand.',
     },
     {
       h: 'About CEFR',
-      p: 'CEFR is an international scale for language ability: A1 and A2 for beginners, B1 and B2 for intermediate, C1 and C2 for advanced. Each rung here carries a CEFR label so you know roughly where you stand.',
+      p: 'CEFR is an international scale for language ability, from A1 to C2. The CEFR labels here are a guide only: CEFR alignment for Arabic is less established than for European languages. For most Indonesian adults, reaching B2 takes two to three years of steady study.',
     },
     {
       h: 'Your progress',
@@ -43,11 +43,11 @@ const copy = {
     },
     {
       h: 'How lessons are written',
-      p: 'Lessons are drafted with AI help, then checked by a person before they are marked ready. Lessons not yet checked carry a Draft badge.',
+      p: 'Lessons are drafted with AI help, then checked by an Arabic teacher or native speaker before they are marked ready. Egyptian lines are checked by an Egyptian speaker. Lessons not yet checked carry a Draft badge.',
     },
     {
       h: 'Who made it',
-      p: 'Made by Fathul, for people who want to climb slowly without feeling judged.',
+      p: 'Made by Fathul, as a sibling of English Ladder, for people who want to climb slowly without feeling judged.',
     },
   ],
 };

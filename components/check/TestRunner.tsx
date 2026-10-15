@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState } from 'react';
-import type { CheckItem, LessonSummary, Noun, Rung, TestPool } from '@/lib/types';
+import type { CheckItem, LessonSummary, Rung, TestPool } from '@/lib/types';
 import { drawTest } from '@/lib/check/draw';
 import { grade, type Response } from '@/lib/check/grade';
 import { newSeed } from '@/lib/check/random';
@@ -17,13 +17,13 @@ import { CheckItemView } from './CheckItemView';
 import { ClimbMoment } from './ClimbMoment';
 import { WhyLine } from './WhyLine';
 
-type Props = { rung: Rung; next: Rung | null; pool: TestPool; lessons: LessonSummary[]; nouns?: Noun[] };
+type Props = { rung: Rung; next: Rung | null; pool: TestPool; lessons: LessonSummary[] };
 
 type Phase = { kind: 'intro' } | { kind: 'run'; i: number } | { kind: 'result'; climb: boolean };
 
 const show = (r: Response | undefined) => (r === undefined ? '—' : Array.isArray(r) ? r.join(' ') : r);
 
-export function TestRunner({ rung, next, pool, lessons, nouns }: Props) {
+export function TestRunner({ rung, next, pool, lessons }: Props) {
   const { t, lang } = useT();
   const progress = useProgress();
   const [phase, setPhase] = useState<Phase>({ kind: 'intro' });
@@ -113,7 +113,6 @@ export function TestRunner({ rung, next, pool, lessons, nouns }: Props) {
               key={`${seed}-${item.id}`}
               mode="test"
               item={item}
-              nouns={nouns}
               value={answers[item.id]}
               onChange={(r) => setAnswers((a) => ({ ...a, [item.id]: r }))}
             />

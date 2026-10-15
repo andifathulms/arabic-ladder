@@ -1,6 +1,6 @@
-/* English Ladder service worker. Bump CACHE_VERSION on every release. */
-const CACHE_VERSION = 'v1.3.0';
-const CACHE = `english-ladder-${CACHE_VERSION}`;
+/* Arabic Ladder service worker. Bump CACHE_VERSION on every release. */
+const CACHE_VERSION = 'v0.1.0';
+const CACHE = `arabic-ladder-${CACHE_VERSION}`;
 // Works under any base path: everything is relative to the registration scope.
 const SCOPE = self.registration.scope;
 const SHELL = ['', 'rung/easy-1/', 'review/', 'words/', 'me/', 'settings/', 'about/', 'manifest.webmanifest', 'icons/icon.svg'];
@@ -18,7 +18,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('english-ladder-') && k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('arabic-ladder-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });

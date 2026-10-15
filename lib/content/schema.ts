@@ -127,7 +127,7 @@ export const RungSchema = z
   .object({
     id: z.string(),
     name: z.string(),
-    tier: z.enum(['easy', 'medium', 'hard']),
+    tier: z.enum(['huruf', 'easy', 'medium', 'hard']),
     cefr: z.string(),
     explain_lang: z.enum(['id', 'mixed', 'en']),
     status: z.enum(['live', 'soon']),
@@ -163,18 +163,6 @@ export const ReadingSchema = z
     items: z.array(CheckItemSchema).min(2).max(4),
   })
   .strict();
-
-export const NounSchema = z
-  .object({
-    word: z.string(),
-    initial_sound: z.enum(['vowel', 'consonant']),
-    ipa_hint: z.string(),
-    plural: z.string(),
-    plural_rule: z.enum(['s', 'es', 'y-ies', 'f-ves', 'irregular', 'same']),
-    id: z.string(),
-  })
-  .strict();
-export const NounsSchema = z.array(NounSchema).min(1);
 
 /** Words per rung. An entry may be one word or a flow list of words, for compact groups. */
 export const LexiconSchema = z.record(

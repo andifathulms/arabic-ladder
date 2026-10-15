@@ -51,7 +51,7 @@ export function SettingsView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `english-ladder-progress-${store.todayKey()}.json`;
+    a.download = `arabic-ladder-progress-${store.todayKey()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

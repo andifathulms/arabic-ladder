@@ -5,7 +5,6 @@ import { ZodError } from 'zod';
 import {
   CONTENT_DIR,
   getCurriculum,
-  getNouns,
   getReading,
   getTestPool,
   lessonFiles,
@@ -135,18 +134,6 @@ for (const rung of rungs) {
   } catch (e) {
     err(fmtZod(`${rung.id}/reading.yaml`, e));
   }
-}
-
-// 4. Nouns
-try {
-  const nouns = getNouns();
-  const seen = new Set<string>();
-  for (const n of nouns) {
-    if (seen.has(n.word)) err(`data/nouns.yaml: duplicate noun "${n.word}"`);
-    seen.add(n.word);
-  }
-} catch (e) {
-  err(fmtZod('data/nouns.yaml', e));
 }
 
 // 5. Inventory, lexicon and structure lint

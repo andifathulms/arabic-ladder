@@ -7,14 +7,13 @@ import {
   CurriculumSchema,
   LessonFrontmatterSchema,
   LexiconSchema,
-  NounsSchema,
   ReadingSchema,
   TestPoolSchema,
 } from './schema';
 import { parseSections } from './sections';
 import { itemText } from '../check/text';
 import { stripMarkup } from '../markup';
-import type { Lesson, LessonSummary, Noun, Reading, Rung, TestPool } from '../types';
+import type { Lesson, LessonSummary, Reading, Rung, TestPool } from '../types';
 
 export const CONTENT_DIR = path.join(process.cwd(), 'content');
 
@@ -115,12 +114,6 @@ export function getReading(rungId: string): Reading | null {
   const file = path.join(CONTENT_DIR, rungId, 'reading.yaml');
   if (!fs.existsSync(file)) return null;
   return ReadingSchema.parse(readYaml(`${rungId}/reading.yaml`));
-}
-
-export function getNouns(): Noun[] {
-  const file = path.join(CONTENT_DIR, 'data', 'nouns.yaml');
-  if (!fs.existsSync(file)) return [];
-  return NounsSchema.parse(readYaml('data/nouns.yaml'));
 }
 
 export function getLexicon(): Record<string, string[]> {

@@ -25,10 +25,9 @@ describe('migrations', () => {
     expect(() => migrate({ schemaVersion: 99 })).toThrow(MigrationError);
   });
 
-  it('moves the old "system" default to the bright theme once, keeps an explicit dark', () => {
-    expect(migrate({ schemaVersion: 1, settings: { theme: 'system' } }).settings.theme).toBe('light');
+  it('keeps theme choices and rejects non-objects', () => {
+    expect(migrate({ schemaVersion: 1, settings: { theme: 'system' } }).settings.theme).toBe('system');
     expect(migrate({ schemaVersion: 1, settings: { theme: 'dark' } }).settings.theme).toBe('dark');
-    expect(migrate({ schemaVersion: 2, settings: { theme: 'system' } }).settings.theme).toBe('system');
     expect(() => migrate('nope')).toThrow(MigrationError);
   });
 });

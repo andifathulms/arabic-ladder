@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { CheckItem, Noun } from '@/lib/types';
+import type { CheckItem } from '@/lib/types';
 import { grade, type Response } from '@/lib/check/grade';
 import { sfx } from '@/lib/speech/sfx';
 import { stripMarkup } from '@/lib/markup';
@@ -16,7 +16,6 @@ import { useCanSpeak, useSpeak } from '../useSpeech';
 
 type Common = {
   item: CheckItem;
-  nouns?: Noun[];
   /** 1–4 picks an answer. Turn off when several items share a page. */
   numberKeys?: boolean;
 };
@@ -86,7 +85,7 @@ function ListenPrompt({ audio, prompt }: { audio: string; prompt?: string }) {
 }
 
 export function CheckItemView(props: Practice | Test) {
-  const { item, nouns } = props;
+  const { item } = props;
   const { t } = useT();
   const [wrong, setWrong] = useState<string[]>([]);
   const [solved, setSolved] = useState(props.mode === 'practice' && !!props.solved);
@@ -192,7 +191,7 @@ export function CheckItemView(props: Practice | Test) {
       )}
       {item.type === 'scene' && (
         <div className="flex flex-col gap-3">
-          <VisualStage visual={item.visual} nouns={nouns} interactive={false} />
+          <VisualStage visual={item.visual} interactive={false} />
           <p className="text-small text-muted">{item.prompt ?? t('check.scenePrompt')}</p>
         </div>
       )}

@@ -16,8 +16,8 @@ export function Wordmark({ onBoard = false }: { onBoard?: boolean }) {
         <Mark size={22} />
       </span>
       <span className="flex flex-col gap-[3px]">
-        <span className={`font-display text-wordmark font-semibold leading-none ${onBoard ? 'text-board-ink' : 'text-ink'}`}>English Ladder</span>
-        <span className={`label leading-none ${onBoard ? 'text-board-muted' : 'text-muted'}`}>A1 → C1</span>
+        <span className={`font-display text-wordmark font-semibold leading-none ${onBoard ? 'text-board-ink' : 'text-ink'}`}>Arabic Ladder</span>
+        <span className={`label leading-none ${onBoard ? 'text-board-muted' : 'text-muted'}`}>HURUF → B2+</span>
       </span>
     </span>
   );

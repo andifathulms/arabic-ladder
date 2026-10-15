@@ -57,7 +57,7 @@ export function HomeView({ rungs, lessons }: Props) {
               {date ?? ' '}
             </p>
             <h1 className="text-hero tracking-[-0.02em]">
-              {now ? <Accented text={greeting(t, now)} tone="text-accent" /> : 'English Ladder'}
+              {now ? <Accented text={greeting(t, now)} tone="text-accent" /> : 'Arabic Ladder'}
             </h1>
           </header>
 

@@ -3,7 +3,6 @@ import type {
   CheckItemSchema,
   ReadingSchema,
   LessonFrontmatterSchema,
-  NounSchema,
   RungSchema,
 } from './content/schema';
 
@@ -11,7 +10,6 @@ import type {
 export type Bilingual = { id: string; en: string };
 export type CheckItem = z.infer<typeof CheckItemSchema>;
 export type Rung = z.infer<typeof RungSchema>;
-export type Noun = z.infer<typeof NounSchema>;
 export type LessonFrontmatter = z.infer<typeof LessonFrontmatterSchema>;
 
 export type LessonSections = { concept: Bilingual; contrast: Bilingual };

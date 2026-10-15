@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Lesson, LessonSummary, Noun, Rung } from '@/lib/types';
+import type { Lesson, LessonSummary, Rung } from '@/lib/types';
 import * as store from '@/lib/progress/store';
 import { sfx } from '@/lib/speech/sfx';
 import { lessonHref, rungHref, testHref } from '@/lib/routes';
@@ -17,7 +17,6 @@ import { Prose } from './Prose';
 import { Sentence } from './Sentence';
 import { StepBar } from './StepBar';
 import { StepLabel } from './StepLabel';
-import { ExplainToggle } from './ExplainToggle';
 import { SoundCard, TalkCard, WordsCard } from './StrandCards';
 import { CheckStep } from '../check/CheckStep';
 import { VisualStage } from '../visuals/VisualStage';
@@ -30,10 +29,9 @@ type Props = {
   next: LessonSummary | null;
   hasTest: boolean;
   spiralRung: string | null;
-  nouns?: Noun[];
 };
 
-export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralRung, nouns }: Props) {
+export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralRung }: Props) {
   const { t, lang } = useT();
   const settings = useSettings();
   const progress = useProgress();
@@ -185,7 +183,7 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
         <>
           <StepLabel>{t('step.see')}</StepLabel>
           {lesson.visual ? (
-            <VisualStage visual={lesson.visual} nouns={nouns} />
+            <VisualStage visual={lesson.visual} />
           ) : (
             <section className="flex flex-col gap-4 rounded-lg bg-paper-2 p-5">
               <h3 className="eyebrow">{t('lesson.worked')}</h3>
@@ -237,7 +235,6 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
             index={checkIndex}
             solved={solved}
             onSolved={(i) => setSolved((s) => s.map((v, j) => (j === i ? true : v)))}
-            nouns={nouns}
           />
         </>
       );
@@ -328,7 +325,6 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
               </span>
             </div>
           </div>
-          <ExplainToggle effective={effective} />
           <Link
             href={rungHref(rung.id)}
             aria-label={t('lesson.close')}

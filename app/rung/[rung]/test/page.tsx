@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getCurriculum, getLessons, getNouns, getRung, getTestPool, summarize } from '@/lib/content/load';
+import { getCurriculum, getLessons, getRung, getTestPool, summarize } from '@/lib/content/load';
 import { TestRunner } from '@/components/check/TestRunner';
 
 type Params = { params: { rung: string } };
@@ -21,14 +21,12 @@ export default function TestPage({ params }: Params) {
   if (!rung || !pool) notFound();
   const rungs = getCurriculum();
   const next = rungs[rungs.findIndex((r) => r.id === rung.id) + 1] ?? null;
-  const usesNouns = pool.items.some((i) => i.type === 'scene' && i.visual.id === 'noun-builder');
   return (
     <TestRunner
       rung={rung}
       next={next}
       pool={pool}
       lessons={getLessons(rung.id).map(summarize)}
-      nouns={usesNouns ? getNouns() : undefined}
     />
   );
 }

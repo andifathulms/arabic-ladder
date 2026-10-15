@@ -2,17 +2,16 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import type { LessonSummary, Noun } from '@/lib/types';
+import type { LessonSummary } from '@/lib/types';
 import { missedCount } from '@/lib/progress/derive';
 import { lessonHref } from '@/lib/routes';
 import { useProgress, useT } from './ProgressProvider';
 import { PageShell } from './ui/PageShell';
 import { PlayButton } from './lesson/PlayButton';
 import { IconBook, IconSearch } from './ui/Icon';
-import { article } from './visuals/nounLogic';
 import { useSpeak } from './useSpeech';
 
-export function WordsView({ lessons, nouns = [] }: { lessons: LessonSummary[]; nouns?: Noun[] }) {
+export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
   const { t } = useT();
   const progress = useProgress();
   const speak = useSpeak();
@@ -20,7 +19,6 @@ export function WordsView({ lessons, nouns = [] }: { lessons: LessonSummary[]; n
   const [only, setOnly] = useState<string | null>(null);
   const [mistakes, setMistakes] = useState(false);
 
-  const byWord = useMemo(() => new Map(nouns.map((n) => [n.word.toLowerCase(), n])), [nouns]);
   const opened = lessons.filter((l) => progress.opened.includes(l.id)).sort((a, b) => a.order - b.order);
   const total = opened.reduce((n, l) => n + l.glossary.length, 0);
   const groups = useMemo(() => {
@@ -98,25 +96,16 @@ export function WordsView({ lessons, nouns = [] }: { lessons: LessonSummary[]; n
                 </h2>
                 <ul className="card flex flex-col divide-y divide-rule overflow-hidden">
                   {words.map((w) => {
-                    const noun = byWord.get(w.en.toLowerCase());
                     return (
                       <li key={w.en} className="flex min-h-[60px] items-center gap-3 px-4 py-2">
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span lang="en" className="font-display text-body font-semibold">
                             {w.en}
-                            {noun && noun.plural_rule === 'irregular' && (
-                              <span className="font-medium text-muted"> → {noun.plural}</span>
-                            )}
                           </span>
                           <span lang="id" className="id-text text-small">
                             {w.id}
                           </span>
                         </span>
-                        {noun && (
-                          <span lang="en" className="label rounded-sm bg-accent-soft px-2 py-[2px] normal-case tracking-normal text-accent">
-                            {article(noun)}
-                          </span>
-                        )}
                         <PlayButton text={w.en} onPlay={() => void speak(w.en)} small />
                       </li>
                     );

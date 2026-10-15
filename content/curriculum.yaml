@@ -1,0 +1,12 @@
+# Placeholder ladder for the fork (M0). Replaced by the full Arabic curriculum in M3.
+rungs:
+  - id: huruf-1
+    name: Huruf 1
+    tier: huruf
+    cefr: Pre-A1
+    explain_lang: id
+    status: soon
+    optional: true
+    lessons: 12
+    description: { id: "Huruf dan vokal pendek.", en: "Letters and short vowels." }
+    topics: [letters]

@@ -4,7 +4,6 @@ import {
   getCurriculum,
   getLesson,
   getLessons,
-  getNouns,
   getRung,
   getTestPool,
   summarize,
@@ -40,9 +39,6 @@ export default function LessonPage({ params }: Params) {
   const spiral = rungs
     .slice(rungs.findIndex((r) => r.id === rung.id) + 1)
     .find((r) => r.threads.includes(lesson.spiral));
-  const usesNouns =
-    lesson.visual?.id === 'noun-builder' ||
-    lesson.check.some((c) => c.type === 'scene' && c.visual.id === 'noun-builder');
 
   return (
     <LessonPlayer
@@ -52,7 +48,6 @@ export default function LessonPage({ params }: Params) {
       next={nextLesson ? summarize(nextLesson) : null}
       hasTest={!!getTestPool(rung.id)}
       spiralRung={spiral?.name ?? null}
-      nouns={usesNouns ? getNouns() : undefined}
     />
   );
 }

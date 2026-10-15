@@ -6,8 +6,8 @@ import { withBase } from '@/lib/basePath';
 import { ProgressProvider } from '@/components/ProgressProvider';
 
 export const metadata: Metadata = {
-  title: { default: 'English Ladder', template: '%s · English Ladder' },
-  description: 'Kursus bahasa Inggris bertingkat untuk penutur bahasa Indonesia. Pelan-pelan, tapi naik.',
+  title: { default: 'Arabic Ladder', template: '%s · Arabic Ladder' },
+  description: 'Kursus bahasa Arab bertingkat untuk penutur bahasa Indonesia, dari huruf pertama. Pelan-pelan, tapi naik.',
   manifest: withBase('/manifest.webmanifest'),
   icons: { icon: withBase('/icons/icon.svg'), apple: withBase('/icons/icon-192.png') },
 };
