@@ -18,6 +18,8 @@ export function emptyState(): ProgressState {
     lessons: {},
     items: {},
     rungs: {},
+    capstones: {},
+    placement: null,
     days: [],
     opened: [],
     settings: { ...DEFAULT_SETTINGS },

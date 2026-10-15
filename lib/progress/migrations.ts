@@ -1,6 +1,6 @@
 import { SCHEMA_VERSION } from './constants';
 import { DEFAULT_SETTINGS, emptyState } from './defaults';
-import type { ProgressState } from './types';
+import type { PlacementRecord, ProgressState } from './types';
 
 type Raw = Record<string, unknown> & { schemaVersion?: unknown };
 
@@ -17,6 +17,17 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export class MigrationError extends Error {}
+
+function validPlacement(v: unknown): PlacementRecord | null {
+  if (!isObj(v)) return null;
+  const ok =
+    typeof v.score === 'number' &&
+    typeof v.total === 'number' &&
+    typeof v.date === 'string' &&
+    (v.result === 'easy-1' || v.result === 'huruf-2' || v.result === 'huruf-1');
+  if (!ok) return null;
+  return { ...(v as PlacementRecord), missed: Array.isArray(v.missed) ? v.missed.filter((x): x is string => typeof x === 'string') : [] };
+}
 
 export function migrate(input: unknown): ProgressState {
   if (!isObj(input)) throw new MigrationError('not an object');
@@ -43,6 +54,8 @@ function normalize(s: Raw): ProgressState {
     lessons: isObj(s.lessons) ? (s.lessons as ProgressState['lessons']) : {},
     items: isObj(s.items) ? (s.items as ProgressState['items']) : {},
     rungs: isObj(s.rungs) ? (s.rungs as ProgressState['rungs']) : {},
+    capstones: isObj(s.capstones) ? (s.capstones as ProgressState['capstones']) : {},
+    placement: validPlacement(s.placement),
     days: Array.isArray(s.days) ? s.days.filter((d): d is string => typeof d === 'string').slice(-60) : [],
     opened: Array.isArray(s.opened) ? s.opened.filter((d): d is string => typeof d === 'string') : [],
     settings: {

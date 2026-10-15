@@ -98,6 +98,11 @@ describe('derived state', () => {
   });
   const lessons = [mk(1), mk(2)];
 
+  it('starts at the placed rung after the placement check', () => {
+    store.applyPlacement({ score: 19, total: 20, result: 'easy-1', missed: [] });
+    expect(continueTarget([rung], lessons, store.getState())).toMatchObject({ kind: 'lesson', step: 0, lesson: { id: 'L1' } });
+  });
+
   it('welcomes a first visit', () => {
     expect(continueTarget([rung], lessons, emptyState()).kind).toBe('welcome');
   });
@@ -147,5 +152,46 @@ describe('derived state', () => {
     const w = weekDays(p, new Date('2026-10-15T10:00:00'));
     expect(w[0]).toMatchObject({ key: '2026-10-12', practised: true });
     expect(w[3].today).toBe(true);
+  });
+});
+
+describe('placement and capstones', () => {
+  it('marks Huruf rungs climbed via placement and never un-climbs', () => {
+    store.recordTest('huruf-1', { score: 14, total: 14, seed: 1, date: 'x' }, true);
+    store.applyPlacement({ score: 19, total: 20, result: 'easy-1', missed: [] });
+    let s = store.getState();
+    expect(s.rungs['huruf-1']).toMatchObject({ climbed: true, via: 'test' });
+    expect(s.rungs['huruf-2']).toMatchObject({ climbed: true, via: 'placement' });
+    expect(s.placement).toMatchObject({ score: 19, result: 'easy-1' });
+    // A lower retake never un-climbs.
+    store.applyPlacement({ score: 5, total: 20, result: 'huruf-1', missed: [] });
+    s = store.getState();
+    expect(s.rungs['huruf-2'].climbed).toBe(true);
+    expect(s.placement?.result).toBe('huruf-1');
+  });
+
+  it('places 14–17 at Huruf 2 with Huruf 1 climbed', () => {
+    store.applyPlacement({ score: 15, total: 20, result: 'huruf-2', missed: ['huruf2-07-sounds'] });
+    const s = store.getState();
+    expect(s.rungs['huruf-1']).toMatchObject({ climbed: true, via: 'placement' });
+    expect(s.rungs['huruf-2']).toBeUndefined();
+    expect(s.placement?.missed).toEqual(['huruf2-07-sounds']);
+  });
+
+  it('saves capstone completion once, and it persists', () => {
+    store.completeCapstone('easy-1', 'dialogue');
+    const first = store.getState().capstones['easy-1'].dialogue;
+    expect(first).toBeTruthy();
+    store.completeCapstone('easy-1', 'dialogue');
+    expect(store.getState().capstones['easy-1'].dialogue).toBe(first);
+    store.flush();
+    store.__resetForTests();
+    expect(store.getState().capstones['easy-1'].dialogue).toBe(first);
+  });
+
+  it('keeps capstones and placement through migration, dropping bad placement', () => {
+    const s = migrate({ schemaVersion: 1, capstones: { 'huruf-2': { reading: 'd' } }, placement: { score: 'x' } });
+    expect(s.capstones['huruf-2'].reading).toBe('d');
+    expect(s.placement).toBeNull();
   });
 });

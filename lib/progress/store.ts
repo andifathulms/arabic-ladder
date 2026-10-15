@@ -2,7 +2,7 @@ import { STORAGE_KEY } from './constants';
 import { emptyState } from './defaults';
 import { migrate } from './migrations';
 import { nextBox } from '../check/leitner';
-import type { ProgressState, Settings, TestAttempt } from './types';
+import type { CapstoneKind, PlacementRecord, PlacementResult, ProgressState, Settings, TestAttempt } from './types';
 
 // Single owner of localStorage. Everything else calls this API.
 
@@ -155,9 +155,43 @@ export function recordTest(rungId: string, attempt: TestAttempt, passed: boolean
     ...s,
     rungs: {
       ...s.rungs,
-      [rungId]: { tests: [...prev.tests, attempt].slice(-20), climbed: prev.climbed || passed },
+      [rungId]: {
+        tests: [...prev.tests, attempt].slice(-20),
+        climbed: prev.climbed || passed,
+        via: prev.climbed ? prev.via : passed ? 'test' : undefined,
+      },
     },
   });
+  markPracticedToday();
+}
+
+/** Rungs each placement result marks as climbed (PRD §5.2). */
+export const PLACEMENT_CLIMBS: Record<PlacementResult, string[]> = {
+  'easy-1': ['huruf-1', 'huruf-2'],
+  'huruf-2': ['huruf-1'],
+  'huruf-1': [],
+};
+
+/**
+ * Saves a placement result and marks rungs climbed via placement. Never un-climbs a rung, and never
+ * overwrites a rung climbed by its test.
+ */
+export function applyPlacement(record: Omit<PlacementRecord, 'date'> & { date?: string }) {
+  const s = getState();
+  const rungs = { ...s.rungs };
+  for (const id of PLACEMENT_CLIMBS[record.result]) {
+    const prev = rungs[id] ?? { tests: [], climbed: false };
+    if (!prev.climbed) rungs[id] = { ...prev, climbed: true, via: 'placement' };
+  }
+  commit({ ...s, rungs, placement: { ...record, date: record.date ?? new Date().toISOString() } });
+}
+
+/** Marks a capstone (reading or dialogue) done. Answers are recorded through recordAnswer. */
+export function completeCapstone(rungId: string, kind: CapstoneKind) {
+  const s = getState();
+  const prev = s.capstones[rungId] ?? {};
+  if (prev[kind]) return;
+  commit({ ...s, capstones: { ...s.capstones, [rungId]: { ...prev, [kind]: new Date().toISOString() } } });
   markPracticedToday();
 }
 
