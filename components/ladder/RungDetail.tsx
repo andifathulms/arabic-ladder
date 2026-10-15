@@ -4,12 +4,14 @@ import Link from 'next/link';
 import type { LessonSummary, Rung } from '@/lib/types';
 import type { ProgressState } from '@/lib/progress/types';
 import { lessonState } from '@/lib/progress/derive';
-import { readHref, testHref, rungHref } from '@/lib/routes';
+import { placementHref, readHref, talkHref, testHref, rungHref } from '@/lib/routes';
 import { LessonRow } from './LessonRow';
-import { IconArrowLeft, IconChevron, IconFlag, IconPlay } from '../ui/Icon';
-import { Contours } from '../ui/Contours';
+import { IconArrowLeft, IconChevron, IconFlag, IconReview } from '../ui/Icon';
+import { CapstoneCard } from './CapstoneCard';
+import { ArIsland } from '../ar/ArIsland';
+import { Lattice } from '../ui/Lattice';
 import { ProgressRing } from '../ui/ProgressRing';
-import { tierName } from '../ui/tier';
+import { cefrLabel, tierName } from '../ui/tier';
 import { useT } from '../ProgressProvider';
 
 type Props = {
@@ -19,18 +21,25 @@ type Props = {
   progress: ProgressState;
   test: TestInfo | null;
   reading?: ReadingInfo | null;
+  dialogue?: DialogueInfo | null;
+  /** The rung page that offers the placement retake (Huruf 1). */
+  placement?: boolean;
 };
 
 export type TestInfo = { draw: number; pass: number };
 export type ReadingInfo = { title: { en: string; id: string }; items: number };
+export type DialogueInfo = { title: { en: string; id: string }; lines: number; items: number };
 
-export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Props) {
+export function RungDetail({ rung, rungs, lessons, progress, test, reading, dialogue, placement }: Props) {
   const { t, lang } = useT();
   const mine = lessons.filter((l) => l.rung === rung.id).sort((a, b) => a.order - b.order);
   const tests = progress.rungs[rung.id]?.tests ?? [];
   const best = tests.length ? Math.max(...tests.map((x) => x.score)) : null;
   const climbed = !!progress.rungs[rung.id]?.climbed;
   const states = mine.map((l) => lessonState(l, progress));
+  // After placement into this rung, the lessons behind missed check items are marked.
+  const missed = new Set(progress.placement?.result === rung.id ? progress.placement.missed : []);
+  const caps = progress.capstones[rung.id] ?? {};
   const done = states.filter((s) => s.kind === 'done' || s.kind === 'review').length;
   // The lesson to open next: the one in progress, else the first not finished.
   const currentIdx = (() => {
@@ -46,7 +55,7 @@ export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Pr
   return (
     <div className="flex flex-col gap-6">
       <header className="board -mx-gutter flex flex-col gap-4 rounded-none px-gutter pb-8 pt-3 min-[640px]:mx-0 min-[640px]:rounded-xl min-[640px]:px-8 min-[640px]:pt-5">
-        <Contours />
+        <Lattice />
         <Link
           href="/"
           className="inline-flex min-h-touch items-center gap-1 self-start text-small font-bold text-board-muted no-underline hover:text-board-ink"
@@ -57,9 +66,12 @@ export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Pr
           <div className="flex min-w-0 flex-col gap-3">
             <p className="label flex items-center gap-2 text-brass">
               <span aria-hidden className="h-[7px] w-[7px] rounded-full" style={{ background: `var(--${rung.tier})` }} />
-              {tierName(rung.tier)} · {rung.cefr}
+              {tierName(rung.tier)} · {cefrLabel(rung.cefr, lang)}
             </p>
             <h1 className="text-hero leading-none tracking-[-0.02em] text-board-ink">{rung.name}</h1>
+            <ArIsland block as="p" size="title" face="display" className="text-board-muted">
+              {rung.name_ar}
+            </ArIsland>
           </div>
           {rung.status === 'live' && (
             <ProgressRing
@@ -100,26 +112,33 @@ export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Pr
           ) : (
             <ol className="card flex flex-col divide-y divide-rule overflow-hidden">
               {mine.map((l, i) => (
-                <LessonRow key={l.id} lesson={l} state={states[i]} current={i === currentIdx} />
+                <LessonRow key={l.id} lesson={l} state={states[i]} current={i === currentIdx} flagged={missed.has(l.id)} />
               ))}
             </ol>
           )}
-          {reading && (
-            <Link
-              href={readHref(rung.id)}
-              className="mt-3 flex min-h-[72px] items-center gap-4 rounded-lg bg-accent-soft p-4 text-ink no-underline transition-colors duration-quick hover:bg-paper-2"
-            >
-              <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-md bg-surface text-accent">
-                <IconPlay />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-display text-card font-medium">
-                  {t('read.title')}: <span lang="en">{reading.title.en}</span>
-                </span>
-                <span className="text-small text-muted tnum">{t('read.meta', { n: reading.items })}</span>
-              </span>
-              <IconChevron className="shrink-0 text-muted" />
-            </Link>
+          {missed.size > 0 && <p className="text-small text-muted">{t('rung.missedHint')}</p>}
+          {(reading || dialogue) && (
+            <div className="mt-3 flex flex-col gap-2">
+              <h3 className="eyebrow">{t('rung.capstones')}</h3>
+              {reading && (
+                <CapstoneCard
+                  href={readHref(rung.id)}
+                  kind="reading"
+                  title={`${t('read.title')}: ${lang === 'en' ? reading.title.en : reading.title.id}`}
+                  meta={t('read.meta', { n: reading.items })}
+                  done={caps.reading}
+                />
+              )}
+              {dialogue && (
+                <CapstoneCard
+                  href={talkHref(rung.id)}
+                  kind="dialogue"
+                  title={`${t('talk.title')} · ${t('lesson.mesir')}: ${lang === 'en' ? dialogue.title.en : dialogue.title.id}`}
+                  meta={t('talk.meta', { n: dialogue.lines, k: dialogue.items })}
+                  done={caps.dialogue}
+                />
+              )}
+            </div>
           )}
           {test && (
             <Link
@@ -140,6 +159,21 @@ export function RungDetail({ rung, rungs, lessons, progress, test, reading }: Pr
                   {t('rung.testMeta', { n: test.draw, pass: test.pass })} ·{' '}
                   {best !== null ? t('rung.testBest', { n: best, total: test.draw }) : t('rung.testAlways')}
                 </span>
+              </span>
+              <IconChevron className="shrink-0 text-muted" />
+            </Link>
+          )}
+          {placement && (
+            <Link
+              href={placementHref}
+              className="mt-3 flex min-h-[64px] items-center gap-4 rounded-lg bg-paper-2 p-4 text-ink no-underline transition-colors duration-quick hover:bg-accent-soft"
+            >
+              <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-md bg-surface text-accent">
+                <IconReview />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-body font-bold">{t('rung.placementRetake')}</span>
+                <span className="text-small text-muted">{t('rung.placementRetakeMeta')}</span>
               </span>
               <IconChevron className="shrink-0 text-muted" />
             </Link>

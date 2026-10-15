@@ -1,3 +1,5 @@
+import { ArIsland } from '../ar/ArIsland';
+
 /** Two rails and three rungs drawn as one shape; the top rung in --rung gold. */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
@@ -8,7 +10,7 @@ export function Mark({ size = 28 }: { size?: number }) {
   );
 }
 
-/** The mark in a cream disc, the name in the serif, a mono line underneath. */
+/** The mark in a cream disc, the name in the serif, a mono line with سُلَّم (sullam, ladder) underneath. */
 export function Wordmark({ onBoard = false }: { onBoard?: boolean }) {
   return (
     <span className="flex items-center gap-3">
@@ -17,7 +19,12 @@ export function Wordmark({ onBoard = false }: { onBoard?: boolean }) {
       </span>
       <span className="flex flex-col gap-[3px]">
         <span className={`font-display text-wordmark font-semibold leading-none ${onBoard ? 'text-board-ink' : 'text-ink'}`}>Arabic Ladder</span>
-        <span className={`label leading-none ${onBoard ? 'text-board-muted' : 'text-muted'}`}>HURUF → B2+</span>
+        <span className={`flex items-baseline gap-2 leading-none ${onBoard ? 'text-board-muted' : 'text-muted'}`}>
+          <span className="label">HURUF → B2+</span>
+          <ArIsland className="text-[1rem] leading-none" title="sullam: tangga">
+            سُلَّم
+          </ArIsland>
+        </span>
       </span>
     </span>
   );

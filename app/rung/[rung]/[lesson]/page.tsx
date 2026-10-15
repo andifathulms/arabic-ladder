@@ -22,7 +22,7 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: Params): Metadata {
   const l = getLesson(params.rung, params.lesson);
-  return { title: l ? l.title.en : undefined };
+  return { title: l ? l.title.id : undefined };
 }
 
 export default function LessonPage({ params }: Params) {

@@ -19,3 +19,12 @@ describe('tier helpers', () => {
     expect(tierName('medium')).toBe('Medium');
   });
 });
+
+describe('Huruf tier', () => {
+  it('names the tier and says Pra-A1 in Indonesian', () => {
+    const h = [r('huruf-1', 'huruf', 'Pre-A1'), r('huruf-2', 'huruf', 'Pre-A1')];
+    expect(tierName('huruf')).toBe('Huruf');
+    expect(tierRange(h, 'huruf', 'id')).toBe('Pra-A1');
+    expect(tierRange(h, 'huruf', 'en')).toBe('Pre-A1');
+  });
+});

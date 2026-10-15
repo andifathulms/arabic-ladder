@@ -8,7 +8,7 @@ import * as store from '@/lib/progress/store';
 import { useProgress, useT } from '../ProgressProvider';
 import { PageShell } from '../ui/PageShell';
 import { BottomActionBar } from '../lesson/BottomActionBar';
-import { IconArrowRight, IconReview } from '../ui/Icon';
+import { IconArrowRight, IconClose, IconReview } from '../ui/Icon';
 import { CheckItemView } from './CheckItemView';
 
 type Props = { items: { item: CheckItem; lessonId: string }[] };
@@ -76,10 +76,25 @@ export function ReviewRunner({ items }: Props) {
   return (
     <div className="flex min-h-[100dvh] flex-col">
       <header className="sticky top-0 z-10 border-b border-rule bg-surface">
-        <div className="page flex max-w-lesson items-center justify-between gap-3 py-3">
+        <div className="page flex max-w-lesson items-center justify-between gap-3 py-2">
           <span className="label text-muted">{t('review.title')}</span>
-          <span className="label tnum text-muted">
-            {run.i + 1} / {run.items.length}
+          <span className="flex items-center gap-2">
+            <span className="label tnum text-muted">
+              {run.i + 1} / {run.items.length}
+            </span>
+            {/* An exit while running (fixes English Ladder issue 3); answers given stay recorded. */}
+            <button
+              type="button"
+              aria-label={t('review.close')}
+              title={t('review.closeConfirm')}
+              onClick={() => {
+                setDone(run.first.length ? run.first : null);
+                setRun(null);
+              }}
+              className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full text-ink hover:bg-paper-2"
+            >
+              <IconClose />
+            </button>
           </span>
         </div>
       </header>

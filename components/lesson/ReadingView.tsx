@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import * as store from '@/lib/progress/store';
 import type { Reading, Rung } from '@/lib/types';
 import { rungHref } from '@/lib/routes';
 import { useT } from '../ProgressProvider';
@@ -16,6 +17,10 @@ export function ReadingView({ rung, reading }: { rung: Rung; reading: Reading })
   const { t, lang } = useT();
   const [solved, setSolved] = useState<string[]>([]);
   const allDone = solved.length === reading.items.length;
+  // Capstone completion is saved (fixes English Ladder issue 4).
+  useEffect(() => {
+    if (allDone) store.completeCapstone(rung.id, 'reading');
+  }, [allDone, rung.id]);
 
   return (
     <div className="flex min-h-[100dvh] flex-col">
@@ -73,7 +78,10 @@ export function ReadingView({ rung, reading }: { rung: Rung; reading: Reading })
                 mode="practice"
                 item={item}
                 numberKeys={false}
-                onSolved={() => setSolved((s) => (s.includes(item.id) ? s : [...s, item.id]))}
+                onSolved={(firstTry) => {
+                  store.recordAnswer(item.id, firstTry);
+                  setSolved((s) => (s.includes(item.id) ? s : [...s, item.id]));
+                }}
               />
             </div>
           ))}

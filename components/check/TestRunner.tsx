@@ -12,7 +12,7 @@ import { lessonHref, rungHref } from '@/lib/routes';
 import { useProgress, useT } from '../ProgressProvider';
 import { IconArrowLeft, IconArrowRight, IconCheck, IconClose } from '../ui/Icon';
 import { BottomActionBar } from '../lesson/BottomActionBar';
-import { StepBar } from '../lesson/StepBar';
+import { QuestionBar } from '../lesson/QuestionBar';
 import { CheckItemView } from './CheckItemView';
 import { ClimbMoment } from './ClimbMoment';
 import { WhyLine } from './WhyLine';
@@ -103,8 +103,9 @@ export function TestRunner({ rung, next, pool, lessons }: Props) {
         {header(i)}
         <main className="flex-1 py-5 sm:py-7">
           <div className="page max-w-lesson sm:rounded-lg sm:bg-surface sm:px-7 sm:py-7 sm:shadow-e2">
+            {/* Labelled by question, not lesson step (fixes English Ladder issue 6). */}
             <div className="mb-5">
-              <StepBar step={Math.floor((i / items.length) * 6)} />
+              <QuestionBar n={i + 1} total={items.length} />
             </div>
             <p className="sr-only" aria-live="polite">
               {t('check.counter', { n: i + 1, total: items.length })}
@@ -162,7 +163,7 @@ export function TestRunner({ rung, next, pool, lessons }: Props) {
                 <li key={l.id}>
                   <Link href={lessonHref(l)} className="inline-flex min-h-touch items-center gap-2">
                     <span className="label tnum text-muted">{l.order}</span>
-                    <span lang="en">{l.title.en}</span>
+                    <span lang={lang}>{lang === 'en' ? l.title.en : l.title.id}</span>
                   </Link>
                 </li>
               ))}
@@ -177,7 +178,7 @@ export function TestRunner({ rung, next, pool, lessons }: Props) {
             .map(([lid, rs]) => (
               <div key={lid} className="flex flex-col gap-3">
                 <h3 className="eyebrow">
-                  {lessonOf(lid)?.order} · <span lang="en">{lessonOf(lid)?.title.en}</span>
+                  {lessonOf(lid)?.order} · <span lang={lang}>{lang === 'en' ? lessonOf(lid)?.title.en : lessonOf(lid)?.title.id}</span>
                 </h3>
                 <ul className="flex flex-col gap-3">
                   {rs.map(({ item, given, ok }) => (

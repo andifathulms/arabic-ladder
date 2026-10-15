@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import type { LessonSummary, Rung } from '@/lib/types';
 import { completedCount, continueTarget, currentRung, doneCount } from '@/lib/progress/derive';
-import { lessonHref, rungHref } from '@/lib/routes';
+import { lessonHref, placementHref, rungHref } from '@/lib/routes';
 import { useHydrated, useProgress, useT, type T } from '../ProgressProvider';
 import { AppShell } from '../ui/AppShell';
 import { IconChevron, IconReview } from '../ui/Icon';
 import { Accented, ContinueCard } from './ContinueCard';
 import { LadderRail } from './LadderRail';
 import { LessonStrip } from './LessonStrip';
+import { cefrLabel } from '../ui/tier';
 
-type Props = { rungs: Rung[]; lessons: LessonSummary[]; testRungs: string[] };
+type Props = { rungs: Rung[]; lessons: LessonSummary[]; testRungs: string[]; hasPlacement: boolean };
 
 function greeting(t: T, now: Date): string {
   const h = now.getHours();
@@ -21,16 +22,16 @@ function greeting(t: T, now: Date): string {
   return t('home.greet.night');
 }
 
-export function HomeView({ rungs, lessons }: Props) {
+export function HomeView({ rungs, lessons, hasPlacement }: Props) {
   const progress = useProgress();
   const hydrated = useHydrated();
   const { t, lang } = useT();
   const target = continueTarget(rungs, lessons, progress);
   // While a learner works in an optional rung (Starter), the board and strip follow that rung.
   const here = (target.kind === 'lesson' && rungs.find((r) => r.id === target.lesson.rung)) || currentRung(rungs, progress);
-  const main = rungs.find((r) => r.status === 'live' && !r.optional) ?? rungs[0];
-  const first = lessons.filter((l) => l.rung === main.id).sort((a, b) => a.order - b.order)[0];
-  const starter = rungs.find((r) => r.optional && r.status === 'live');
+  // Door 1 opens Huruf 1, lesson 1; door 2 opens the placement check.
+  const huruf = rungs.find((r) => r.tier === 'huruf' && r.status === 'live');
+  const first = huruf && lessons.filter((l) => l.rung === huruf.id).sort((a, b) => a.order - b.order)[0];
   const showReview = completedCount(lessons, progress) >= 2;
   const mine = lessons.filter((l) => l.rung === here.id).sort((a, b) => a.order - b.order);
   const done = doneCount(here.id, lessons, progress);
@@ -45,7 +46,7 @@ export function HomeView({ rungs, lessons }: Props) {
       headerAside={
         <Link href={rungHref(here.id)} className="label flex min-h-touch items-center gap-2 rounded-full px-3 text-ink no-underline">
           <span aria-hidden className="h-[8px] w-[8px] rounded-full" style={{ background: `var(--${here.tier})` }} />
-          {here.cefr}
+          {cefrLabel(here.cefr, lang)}
           <span className="sr-only">· {here.name}</span>
         </Link>
       }
@@ -64,7 +65,7 @@ export function HomeView({ rungs, lessons }: Props) {
           <ContinueCard
             target={target}
             firstLessonHref={first ? lessonHref(first) : null}
-            starterHref={starter ? rungHref(starter.id) : null}
+            placementHref={hasPlacement ? placementHref : null}
             rungs={rungs}
           />
 

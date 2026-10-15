@@ -13,7 +13,7 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: Params): Metadata {
   const reading = getReading(params.rung);
-  return { title: reading ? reading.title.en : undefined };
+  return { title: reading ? reading.title.id : undefined };
 }
 
 export default function ReadPage({ params }: Params) {

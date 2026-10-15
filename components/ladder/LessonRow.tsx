@@ -7,12 +7,15 @@ import { lessonHref } from '@/lib/routes';
 import { IconArrowRight } from '../ui/Icon';
 import { useT } from '../ProgressProvider';
 import { StatusPill } from './LessonStrip';
+import { ArIsland } from '../ar/ArIsland';
 
 /** One lesson in the rung's list: a big serif numeral, the title, state as dot + word. */
-export function LessonRow({ lesson, state, current }: { lesson: LessonSummary; state: LessonState; current?: boolean }) {
+type RowProps = { lesson: LessonSummary; state: LessonState; current?: boolean; flagged?: boolean };
+
+export function LessonRow({ lesson, state, current, flagged }: RowProps) {
   const { t, lang } = useT();
   const done = state.kind === 'done' || state.kind === 'review';
-  const sub = lang === 'en' ? null : lesson.title.id;
+  const sub = lang === 'en' ? lesson.title.id : null;
 
   let pill: React.ReactNode;
   switch (state.kind) {
@@ -35,7 +38,7 @@ export function LessonRow({ lesson, state, current }: { lesson: LessonSummary; s
       <Link
         href={lessonHref(lesson)}
         aria-current={current ? 'step' : undefined}
-        className={`grid grid-cols-[44px_1fr] items-start gap-x-4 px-4 py-4 text-ink no-underline transition-colors duration-quick min-[640px]:px-6 ${
+        className={`grid grid-cols-[44px_1fr_auto] items-start gap-x-4 px-4 py-4 text-ink no-underline transition-colors duration-quick min-[640px]:px-6 ${
           current ? 'bg-accent-soft' : 'hover:bg-paper'
         }`}
       >
@@ -47,8 +50,8 @@ export function LessonRow({ lesson, state, current }: { lesson: LessonSummary; s
         </span>
         <span className="flex min-w-0 flex-col gap-1">
           <span className="sr-only">{t('home.lessonN', { n: lesson.order })}: </span>
-          <span className="font-display text-card font-medium" lang="en">
-            {lesson.title.en}
+          <span className="font-display text-card font-medium" lang={lang}>
+            {lang === 'en' ? lesson.title.en : lesson.title.id}
           </span>
           {sub && (
             <span className="id-text text-small" lang="id">
@@ -58,6 +61,7 @@ export function LessonRow({ lesson, state, current }: { lesson: LessonSummary; s
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
             {pill}
             <span className="label tnum text-muted">{t('lesson.minutes', { n: lesson.minutes })}</span>
+            {flagged && <StatusPill tone="off">{t('rung.missedBadge')}</StatusPill>}
           </span>
           {current && (
             <span aria-hidden className="mt-1 inline-flex items-center gap-1 text-small font-bold text-accent">
@@ -65,6 +69,11 @@ export function LessonRow({ lesson, state, current }: { lesson: LessonSummary; s
             </span>
           )}
         </span>
+        {lesson.keyword && (
+          <ArIsland aria-hidden className="mt-1 rounded-sm bg-paper-2 px-2 text-ar-small leading-[1.6] text-ink">
+            «{lesson.keyword}»
+          </ArIsland>
+        )}
       </Link>
     </li>
   );

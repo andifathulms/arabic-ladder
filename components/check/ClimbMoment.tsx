@@ -7,13 +7,15 @@ import { sfx } from '@/lib/speech/sfx';
 import { rungHref } from '@/lib/routes';
 import { useReducedMotion, useT } from '../ProgressProvider';
 import { NotchBar } from '../ladder/NotchBar';
-import { Contours } from '../ui/Contours';
+import { Lattice } from '../ui/Lattice';
+import { ArIsland } from '../ar/ArIsland';
+import { Accented } from '../ladder/ContinueCard';
 
 type Props = { rung: Rung; next: Rung | null; onReview: () => void };
 
 /** The one celebratory moment in the app (DESIGN §6.7). */
 export function ClimbMoment({ rung, next, onReview }: Props) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const reduced = useReducedMotion();
   const [climbed, setClimbed] = useState(false);
 
@@ -31,7 +33,7 @@ export function ClimbMoment({ rung, next, onReview }: Props) {
       aria-modal="true"
       aria-labelledby="climb-title"
     >
-      <Contours />
+      <Lattice />
       <div className="page relative flex min-h-full max-w-lesson flex-col justify-center gap-7 py-8">
         {/* Ladder fragment: this rung and the next */}
         <div className="relative mx-auto w-full max-w-[340px] px-[18px]" style={{ height: ROW * 2 + 16 }} aria-hidden>
@@ -71,11 +73,20 @@ export function ClimbMoment({ rung, next, onReview }: Props) {
           />
         </div>
 
-        <div className="flex flex-col gap-3 text-center">
-          <h1 id="climb-title" className="text-hero text-board-ink" lang="en">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <ArIsland block as="p" size="title" face="display" className="text-center text-brass">
+            {rung.name_ar}
+          </ArIsland>
+          {/* Translated, not English (fixes English Ladder issue 13). */}
+          <h1 id="climb-title" className="text-hero text-board-ink" lang={lang}>
             {t('climb.title', { rung: rung.name })}
           </h1>
-          <p className="font-display text-h2 italic text-brass">{t('climb.line')}</p>
+          <p className="font-display text-h2 text-board-ink">
+            <Accented text={t('climb.line')} />
+          </p>
+          <ArIsland block as="p" size="title" face="display" className="text-center text-board-muted" title="sullaman sullaman: setapak demi setapak">
+            سُلَّمًا سُلَّمًا
+          </ArIsland>
         </div>
 
         <div className="flex flex-col items-center gap-3">

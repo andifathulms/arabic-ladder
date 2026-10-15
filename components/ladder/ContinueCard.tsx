@@ -7,11 +7,12 @@ import { lessonHref, testHref } from '@/lib/routes';
 import { IconArrowRight } from '../ui/Icon';
 import { useT } from '../ProgressProvider';
 import { STEP_KEYS } from '../lesson/steps';
-import { Contours } from '../ui/Contours';
+import { Lattice } from '../ui/Lattice';
 import type { Quote } from '@/lib/types';
 import { hasArabic } from '@/lib/arabic/text';
 import { ArIsland } from '../ar/ArIsland';
 import { Translit } from '../ar/Translit';
+import { TwoDoorWelcome } from './TwoDoorWelcome';
 
 /** Sets the last word in brass italic, the way the board marks what matters. */
 export function Accented({ text, tone = 'text-brass' }: { text: string; tone?: string }) {
@@ -76,41 +77,20 @@ function StepDots({ step }: { step: number }) {
 }
 
 /** The board: the single next thing to do, quoting the exact sentence where you stopped. */
-type CardProps = { target: ContinueTarget; firstLessonHref: string | null; starterHref?: string | null; rungs: Rung[] };
+type CardProps = { target: ContinueTarget; firstLessonHref: string | null; placementHref: string | null; rungs: Rung[] };
 
-export function ContinueCard({ target, firstLessonHref, starterHref, rungs }: CardProps) {
+export function ContinueCard({ target, firstLessonHref, placementHref, rungs }: CardProps) {
   const { t, lang } = useT();
   const shell = 'board flex flex-col gap-4 p-6 min-[900px]:gap-5 min-[900px]:p-9';
 
   if (target.kind === 'welcome') {
-    return (
-      <section className={shell} aria-labelledby="welcome-title">
-        <Contours />
-        <p className="label text-brass">{t('home.startHere')}</p>
-        <h2 id="welcome-title" className="max-w-[16ch] text-hero leading-[1.02] tracking-[-0.02em] text-board-ink">
-          <Accented text={t('home.welcomeTitle')} />
-        </h2>
-        <p className="max-w-measure text-board-muted">{t('home.welcomeBody')}</p>
-        {firstLessonHref && (
-          <div>
-            <Link href={firstLessonHref} className="btn btn-board no-underline">
-              {t('home.start')} <IconArrowRight />
-            </Link>
-          </div>
-        )}
-        {starterHref && (
-          <Link href={starterHref} className="self-start text-small text-board-muted underline underline-offset-4 hover:text-board-ink">
-            {t('home.starterLink')}
-          </Link>
-        )}
-      </section>
-    );
+    return <TwoDoorWelcome hurufHref={firstLessonHref} placementHref={placementHref} />;
   }
 
   if (target.kind === 'test') {
     return (
       <section className={shell} aria-labelledby="continue-title">
-        <Contours />
+        <Lattice />
         <p id="continue-title" className="label text-brass">
           {t('home.continue')} · {target.rung.name}
         </p>
@@ -131,7 +111,7 @@ export function ContinueCard({ target, firstLessonHref, starterHref, rungs }: Ca
   const rung = rungs.find((r) => r.id === lesson.rung);
   return (
     <section className={shell} aria-labelledby="continue-title">
-      <Contours />
+      <Lattice />
       <p id="continue-title" className="label tnum text-brass">
         {t('home.continue')} · {rung?.name} · {t('home.lessonN', { n: lesson.order })}
         <span aria-hidden> · {t(STEP_KEYS[step])}</span>

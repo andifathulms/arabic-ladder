@@ -6,6 +6,7 @@ import type { ProgressState } from '@/lib/progress/types';
 import { lessonState, type LessonState } from '@/lib/progress/derive';
 import { lessonHref } from '@/lib/routes';
 import { useT, type T } from '../ProgressProvider';
+import { ArIsland } from '../ar/ArIsland';
 
 export function stateWord(s: LessonState, t: T, minutes: number): string {
   switch (s.kind) {
@@ -48,8 +49,8 @@ export function LessonStrip({ lessons, progress, currentId }: { lessons: LessonS
                 now ? 'outline outline-2 outline-offset-2 outline-accent' : ''
               }`}
             >
-              <span className="doc-grid relative flex min-h-[132px] flex-col gap-2 py-4 pl-6 pr-4">
-                <span aria-hidden className="absolute inset-y-0 left-0 w-[6px]" style={{ background: done ? 'var(--accent)' : now ? 'var(--brass)' : 'var(--rule)' }} />
+              <span className="doc-grid relative flex min-h-[132px] flex-col gap-2 py-4 pe-4 ps-6">
+                <span aria-hidden className="absolute inset-y-0 start-0 w-[6px]" style={{ background: done ? 'var(--accent)' : now ? 'var(--brass)' : 'var(--rule)' }} />
                 <span className="flex items-start justify-between gap-2">
                   <span className="label min-w-0 truncate pt-1 tnum text-muted">
                     <span aria-hidden>№ {String(l.order).padStart(2, '0')}</span>
@@ -66,13 +67,16 @@ export function LessonStrip({ lessons, progress, currentId }: { lessons: LessonS
                     </StatusPill>
                   ) : null}
                 </span>
-                <span className="font-display text-card font-medium" lang="en">
-                  {l.title.en}
+                <span className="font-display text-card font-medium" lang={lang}>
+                  {lang === 'en' ? l.title.en : l.title.id}
                 </span>
+                <ArIsland block size="small" className="text-muted">
+                  {l.title.ar}
+                </ArIsland>
               </span>
               <span className="flex items-center justify-between gap-2 border-t border-rule px-4 py-3">
-                <span className={`min-w-0 truncate text-small text-muted ${lang === 'en' ? '' : 'italic'}`} lang={lang}>
-                  {lang === 'en' ? stateWord(s, t, l.minutes) : l.title.id}
+                <span className="min-w-0 truncate text-small text-muted" lang={lang}>
+                  {stateWord(s, t, l.minutes)}
                 </span>
                 <span className="label shrink-0 tnum text-muted">{t('lesson.minutes', { n: l.minutes })}</span>
               </span>

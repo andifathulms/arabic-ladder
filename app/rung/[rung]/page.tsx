@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getAllSummaries, getCurriculum, getReading, getRung, getTestPool } from '@/lib/content/load';
+import { getAllSummaries, getCurriculum, getDialogue, getPlacement, getReading, getRung, getTestPool } from '@/lib/content/load';
 import { RungView } from '@/components/ladder/RungView';
 
 type Params = { params: { rung: string } };
@@ -19,6 +19,7 @@ export default function RungPage({ params }: Params) {
   if (!rung) notFound();
   const pool = getTestPool(rung.id);
   const reading = getReading(rung.id);
+  const dialogue = getDialogue(rung.id);
   return (
     <RungView
       rung={rung}
@@ -26,6 +27,8 @@ export default function RungPage({ params }: Params) {
       lessons={getAllSummaries().filter((l) => l.rung === rung.id)}
       test={pool ? { draw: pool.draw, pass: pool.pass } : null}
       reading={reading ? { title: reading.title, items: reading.items.length } : null}
+      dialogue={dialogue ? { title: dialogue.title, lines: dialogue.lines.length, items: dialogue.items.length } : null}
+      placement={rung.id === 'huruf-1' && !!getPlacement()}
     />
   );
 }
