@@ -25,7 +25,7 @@ rungs:
     name_ar: "المَدُّ وَالسُّكُونُ"
     tier: huruf
     cefr: Pre-A1
-    status: soon
+    status: live
     optional: true
     lessons: 10
     harakat: full
