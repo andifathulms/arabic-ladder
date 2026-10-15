@@ -11,6 +11,7 @@ import { CheckItemView } from '../check/CheckItemView';
 import { ArIsland } from '../ar/ArIsland';
 import { ArSentence } from '../ar/ArSentence';
 import { EgChip } from '../ar/EgChip';
+import { Prose } from './Prose';
 
 /** The Ngobrol capstone: an Egyptian dialogue with audio, transliteration and translation, then questions. */
 export function DialogueView({ rung, dialogue }: { rung: Rung; dialogue: Dialogue }) {
@@ -62,7 +63,11 @@ export function DialogueView({ rung, dialogue }: { rung: Rung; dialogue: Dialogu
               </li>
             ))}
           </ol>
-          {dialogue.note && <p className="text-small text-ink">{lang === 'en' ? dialogue.note.en : dialogue.note.id}</p>}
+          {dialogue.note && (
+            <div className="text-small text-ink">
+              <Prose text={lang === 'en' ? dialogue.note.en : dialogue.note.id} lang={lang} />
+            </div>
+          )}
         </section>
 
         <section className="flex flex-col gap-6" aria-labelledby="talk-questions">

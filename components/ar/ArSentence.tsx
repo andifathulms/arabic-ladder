@@ -10,6 +10,7 @@ import { Translit } from './Translit';
 import { EgChip } from './EgChip';
 import { useLessonText } from './LessonText';
 import { PlayButton } from '../lesson/PlayButton';
+import { Prose } from '../lesson/Prose';
 import { usePlay } from '../useSpeech';
 import { useT } from '../ProgressProvider';
 
@@ -128,9 +129,9 @@ export function ArSentence({
         </p>
       )}
       {showNote && noteText && (
-        <p className="fade-in mt-2 self-start rounded-sm bg-accent-soft px-3 py-1 text-small text-ink" role="note">
-          {noteText}
-        </p>
+        <div className="fade-in mt-2 self-start rounded-sm bg-accent-soft px-3 py-1 text-small text-ink" role="note">
+          <Prose text={noteText} lang={lang} />
+        </div>
       )}
     </div>
   );

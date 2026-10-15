@@ -85,7 +85,11 @@ export function MesirCard({ examples, note }: { examples: Lesson['examples']; no
           </li>
         ))}
       </ul>
-      {note && <p className="text-small text-ink">{lang === 'en' ? note.en : note.id}</p>}
+      {note && (
+        <div className="text-small text-ink">
+          <Prose text={lang === 'en' ? note.en : note.id} lang={lang} />
+        </div>
+      )}
     </section>
   );
 }
@@ -121,9 +125,9 @@ export function TalkCard({ talk }: { talk: NonNullable<Lesson['talk']> }) {
             <span className="label text-muted">{line.who}</span>
             <ArSentence ar={line.ar} tr={line.tr} id={line.id} en={line.en} size="body" variety={talk.variety} chip={false} />
             {line.note && (
-              <p className="self-start rounded-sm bg-accent-soft px-3 py-1 text-small text-ink" role="note">
-                {lang === 'en' ? line.note.en : line.note.id}
-              </p>
+              <div className="self-start rounded-sm bg-accent-soft px-3 py-1 text-small text-ink" role="note">
+                <Prose text={lang === 'en' ? line.note.en : line.note.id} lang={lang} />
+              </div>
             )}
           </li>
         ))}
