@@ -43,8 +43,10 @@ export const arabic = Noto_Naskh_Arabic({
 });
 
 // Arabic display: big single letters, the سُلَّم wordmark, rung subtitles, the climb moment.
+// Its Latin also sets transliteration: Atkinson Hyperlegible Next and Newsreader both lack
+// ḥ ṣ ḍ ṭ ẓ ʿ ʾ, and Amiri covers them all (an upright serif, never a system fallback).
 export const arabicDisplay = Amiri({
-  subsets: ['arabic'],
+  subsets: ['arabic', 'latin', 'latin-ext'],
   weight: ['400', '700'],
   variable: '--font-ar-display',
   display: 'swap',

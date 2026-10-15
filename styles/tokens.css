@@ -63,7 +63,8 @@
   --t-ar-small: calc(1.25rem * var(--ar-scale));
   --t-ar-glyph: calc(var(--t-ar-glyph-base) * var(--ar-scale));
   --t-ar-title: calc(1.75rem * var(--ar-scale));
-  --t-tr: var(--t-small);
+  /* Transliteration is set in Amiri's Latin, whose x-height is small: one step up from --t-small. */
+  --t-tr: calc(var(--t-small) * 1.12);
 
   /* Space (DESIGN §5.1) */
   --s-1: 4px;

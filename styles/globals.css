@@ -103,6 +103,7 @@
   }
   /* Transliteration: upright, muted, under the Arabic. */
   .tr-text {
+    font-family: var(--font-ar-display), Georgia, serif;
     font-style: normal;
     color: var(--muted);
   }

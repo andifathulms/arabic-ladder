@@ -4,3 +4,4 @@ export * from './text';
 export * from './join';
 export * from './translit';
 export * from './marks';
+export * from './display';
