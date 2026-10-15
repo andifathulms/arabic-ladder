@@ -9,6 +9,8 @@ import {
   summarize,
 } from '@/lib/content/load';
 import { LessonPlayer } from '@/components/lesson/LessonPlayer';
+import { VisualDataProvider } from '@/components/visuals/VisualData';
+import { visualData } from '@/lib/content/visualData';
 
 type Params = { params: { rung: string; lesson: string } };
 
@@ -41,13 +43,15 @@ export default function LessonPage({ params }: Params) {
     .find((r) => r.threads.includes(lesson.spiral));
 
   return (
-    <LessonPlayer
-      lesson={lesson}
-      rung={rung}
-      rungLessons={lessons.map(summarize)}
-      next={nextLesson ? summarize(nextLesson) : null}
-      hasTest={!!getTestPool(rung.id)}
-      spiralRung={spiral?.name ?? null}
-    />
+    <VisualDataProvider value={visualData()}>
+      <LessonPlayer
+        lesson={lesson}
+        rung={rung}
+        rungLessons={lessons.map(summarize)}
+        next={nextLesson ? summarize(nextLesson) : null}
+        hasTest={!!getTestPool(rung.id)}
+        spiralRung={spiral?.name ?? null}
+      />
+    </VisualDataProvider>
   );
 }

@@ -1,11 +1,8 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import { BALL_R, PLACE_SPEC, PLACES, isPlace, placeAlt, placeSentence, type Place, type Slot } from './placeLogic';
-import { useRoving } from './useRoving';
-import { Sentence } from '../lesson/Sentence';
+import { BALL_R, PLACE_SPEC, isPlace, type Place, type Slot } from './placeLogic';
 import { useReducedMotion } from '../ProgressProvider';
-import type { VisualProps } from './types';
 
 // Illustration tones (DESIGN §10). Light from the top-left: top lightest, front base, side darkest.
 const WOOD_TOP = 'color-mix(in srgb, var(--wood) 70%, var(--card-top))';
@@ -53,32 +50,26 @@ function Ball({ place, from }: { place: Place; from: Place | null }) {
   );
 }
 
-type Props = VisualProps<Place> & { initial?: Place };
+type DrawingProps = {
+  place: Place;
+  from: Place | null;
+  /** Text alternative for the scene. */
+  alt: string;
+  /** Object labels drawn in the scene (e.g. table · طاولة · meja). */
+  labels: { table: React.ReactNode; box: React.ReactNode };
+};
 
-export function PlaceScene({ state, interactive = true, onStateChange, lang, initial }: Props) {
-  const [own, setOwn] = useState<Place>(isPlace(initial) ? initial : 'on');
-  const place = isPlace(state) ? state : own;
-  const prev = useRef<Place | null>(null);
-  const [from, setFrom] = useState<Place | null>(null);
-
-  const set = (p: Place) => {
-    if (p === place) return;
-    prev.current = place;
-    setFrom(place);
-    setOwn(p);
-    onStateChange?.(p);
-  };
-  const roving = useRoving(PLACES, place, set);
-
+/**
+ * English Ladder's table, box and ball, unchanged in drawing, draw order and motion. The Arabic
+ * visual (PlaceSceneAr) supplies its own labels, controls and sentence.
+ */
+export function PlaceDrawing({ place, from, alt, labels }: DrawingProps) {
   const slot: Slot = PLACE_SPEC[place].slot;
   const ball = (s: Slot) => (slot === s ? <Ball key={place} place={place} from={from} /> : null);
   const glass = place === 'in';
-  const sentence = placeSentence(place);
-
   return (
-    <div className="flex flex-col gap-4" data-visual="place-scene">
-      <svg viewBox="0 0 400 260" className="h-auto w-full" role="img" aria-label={placeAlt(place, lang)}>
-        <g transform="translate(-28 -80) scale(1.15)">
+    <svg viewBox="0 0 400 260" className="h-auto w-full" role="img" aria-label={alt}>
+      <g transform="translate(-28 -80) scale(1.15)">
         {/* floor */}
         <line x1="16" y1="244.5" x2="384" y2="244.5" style={{ stroke: 'var(--rule)', strokeWidth: 1.5 }} />
         <ellipse cx="210" cy="240" rx="170" ry="9" style={{ fill: 'var(--ink)', opacity: 0.08 }} />
@@ -115,43 +106,27 @@ export function PlaceScene({ state, interactive = true, onStateChange, lang, ini
 
         {ball('front')}
 
-        {/* labels: English · Indonesian */}
         <text x="40" y="258" className="font-mono" style={{ fill: 'var(--muted)', fontSize: 10.5 }}>
-          <tspan lang="en">table</tspan> · <tspan lang="id" fontStyle="italic">meja</tspan>
+          {labels.table}
         </text>
         <text x="60" y="160" className="font-mono" style={{ fill: 'var(--muted)', fontSize: 11 }}>
-          <tspan lang="en">box</tspan> · <tspan lang="id" fontStyle="italic">kotak</tspan>
+          {labels.box}
         </text>
-        </g>
-      </svg>
-
-      <p className="sr-only" aria-live="polite">
-        {placeAlt(place, lang)}
-      </p>
-
-      {interactive && (
-        <>
-          <div role="radiogroup" aria-label={lang === 'en' ? 'Where is the ball?' : 'Di mana bolanya?'} className="flex flex-wrap gap-2" onKeyDown={roving.onKeyDown}>
-            {PLACES.map((p, i) => (
-              <button
-                key={p}
-                type="button"
-                lang="en"
-                {...roving.itemProps(p, i)}
-                className="min-h-touch rounded-full border-2 px-4 font-body font-semibold transition-colors duration-quick"
-                style={
-                  p === place
-                    ? { background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'var(--accent)' }
-                    : { background: 'var(--surface)', color: 'var(--ink)', borderColor: 'var(--rule)' }
-                }
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          <Sentence en={sentence.en} id={sentence.id} />
-        </>
-      )}
-    </div>
+      </g>
+    </svg>
   );
+}
+
+/** Tracks the previous place so the ball can travel from it. */
+export function usePlace(initial: Place, state: Place | undefined, onStateChange?: (p: Place) => void) {
+  const [own, setOwn] = useState<Place>(initial);
+  const place = isPlace(state) ? state : own;
+  const [from, setFrom] = useState<Place | null>(null);
+  const set = (p: Place) => {
+    if (p === place) return;
+    setFrom(place);
+    setOwn(p);
+    onStateChange?.(p);
+  };
+  return { place, from, set };
 }

@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getCurriculum, getLessons, getRung, getTestPool, summarize } from '@/lib/content/load';
 import { TestRunner } from '@/components/check/TestRunner';
+import { VisualDataProvider } from '@/components/visuals/VisualData';
+import { visualData } from '@/lib/content/visualData';
 
 type Params = { params: { rung: string } };
 
@@ -22,11 +24,13 @@ export default function TestPage({ params }: Params) {
   const rungs = getCurriculum();
   const next = rungs[rungs.findIndex((r) => r.id === rung.id) + 1] ?? null;
   return (
-    <TestRunner
-      rung={rung}
-      next={next}
-      pool={pool}
-      lessons={getLessons(rung.id).map(summarize)}
-    />
+    <VisualDataProvider value={visualData()}>
+      <TestRunner
+        rung={rung}
+        next={next}
+        pool={pool}
+        lessons={getLessons(rung.id).map(summarize)}
+      />
+    </VisualDataProvider>
   );
 }

@@ -18,6 +18,7 @@ import { StepBar } from './StepBar';
 import { StepLabel } from './StepLabel';
 import { MesirCard, SoundCard, TalkCard, WordsCard } from './StrandCards';
 import { TirukanCard } from './TirukanCard';
+import { MakhrajThumb } from '../visuals/Makhraj';
 import { GlossaryChips } from './GlossaryChips';
 import { LessonTopToggles } from './LessonTopToggles';
 import { ArIsland } from '../ar/ArIsland';
@@ -221,7 +222,9 @@ export function LessonPlayer({ lesson, rung, rungLessons, next, hasTest, spiralR
             ))}
           </ul>
           <MesirCard examples={lesson.examples} note={lesson.eg_note} />
-          {lesson.sound && <SoundCard sound={lesson.sound} />}
+          {lesson.sound && (
+            <SoundCard sound={lesson.sound} thumb={<MakhrajThumb letters={[lesson.sound.focus, lesson.sound.compare ?? ''].filter((c) => c.length === 1)} />} />
+          )}
           {lesson.talk && <TalkCard talk={lesson.talk} />}
           <TirukanCard {...lesson.tirukan} />
         </>

@@ -35,7 +35,8 @@ export function translitMatches(authored: string, ar: string): boolean {
 
 export function translitFindings(texts: ArText[], where: string): string[] {
   return texts
-    .filter((t) => t.tr && !t.eg && !t.displayOnly)
+    // Lone marks on a dotted circle (◌َ) name a vowel, not a word: nothing to compare.
+    .filter((t) => t.tr && !t.eg && !t.displayOnly && !t.ar.includes('\u25CC'))
     .filter((t) => !translitMatches(t.tr!, t.ar))
     .map((t) => `${where}: ${t.where}: tr "${t.tr}" vs generated "${transliterate(t.ar)}"`);
 }
