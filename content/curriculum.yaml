@@ -7,7 +7,7 @@ rungs:
     name_ar: "الحُرُوفُ"
     tier: huruf
     cefr: Pre-A1
-    status: soon
+    status: live
     optional: true
     lessons: 12
     harakat: full
