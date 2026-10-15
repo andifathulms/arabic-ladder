@@ -1,28 +1,28 @@
-/* Every token from DESIGN.md. Components never use literal colours. */
+/* Every token from DESIGN.md §3 (Mushaf green and cream). Components never use literal colours. */
 :root {
   color-scheme: light;
   --paper: #F6F2E9;
   --paper-2: #EDE6D6;
   --surface: #FFFDF8;
-  --ink: #14213D;
-  --muted: #596277;
+  --ink: #14241E;
+  --muted: #56655E;
   --rule: #E2D9C6;
-  --accent: #2A4A7F;
+  --accent: #1E6B4F;
   --accent-ink: #FFFFFF;
-  --accent-soft: #E4E9F2;
-  --board: #13213F;
-  --board-2: #1E2F55;
+  --accent-soft: #E0EEE6;
+  --board: #0F3B2E;
+  --board-2: #17503F;
   --board-ink: #F6F2E9;
-  --board-muted: #B3BCD0;
+  --board-muted: #B5CBBF;
   --brass: #D2AE72;
   --rung: #B8862E;
   --rung-soft: #F7EBCF;
-  --good: #2F6B45;
-  --good-bg: #E3F0E4;
+  --good: #356F25;
+  --good-bg: #E7F0DA;
   --off: #A84432;
   --off-bg: #F8E4DD;
-  --easy: #3D7A5F;
-  --easy-soft: #E5EFE6;
+  --easy: #2D7480;
+  --easy-soft: #E1EEF0;
   --medium: #2A4A7F;
   --medium-soft: #E4E9F2;
   --hard: #6A4E8F;
@@ -33,7 +33,12 @@
   --card-top: #E8D7BA;
   --card-side: #B79E77;
   --subject: #C2533A;
-  --shadow-rgb: 20 33 61;
+  --shadow-rgb: 15 45 35;
+  --huruf: #865A22;
+  --huruf-soft: #F3E8D6;
+  --harakat: #1E6B4F;
+  --eg: #22668C;
+  --eg-soft: #E2EEF5;
 
   /* Type scale (DESIGN §4.1), rem so the text-size setting scales everything */
   --t-hero: 3rem;
@@ -97,28 +102,28 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --paper: #0D1526;
-    --paper-2: #121C31;
-    --surface: #16213A;
-    --ink: #EEE8DA;
-    --muted: #A6AFC3;
-    --rule: #26324D;
-    --accent: #9DB8E6;
-    --accent-ink: #0D1526;
-    --accent-soft: #1E2C4B;
-    --board: #1B2B4F;
-    --board-2: #25386A;
+    --paper: #0B1914;
+    --paper-2: #10221B;
+    --surface: #142A21;
+    --ink: #ECE9DE;
+    --muted: #A2B4AB;
+    --rule: #22382E;
+    --accent: #7FCBA8;
+    --accent-ink: #0B1914;
+    --accent-soft: #173427;
+    --board: #123A2D;
+    --board-2: #1B4C3B;
     --board-ink: #F2ECDF;
-    --board-muted: #AEB9D2;
+    --board-muted: #A8C1B5;
     --brass: #DDBA7E;
     --rung: #E2B45A;
     --rung-soft: #2C2516;
-    --good: #8FCB9F;
-    --good-bg: #16281F;
+    --good: #A6D68F;
+    --good-bg: #1B2A17;
     --off: #EE9A84;
     --off-bg: #331F1B;
-    --easy: #7CC4A0;
-    --easy-soft: #152A22;
+    --easy: #7CC4CF;
+    --easy-soft: #13282B;
     --medium: #9DB8E6;
     --medium-soft: #1E2C4B;
     --hard: #C1A8E6;
@@ -130,33 +135,38 @@
     --card-side: #8E7956;
     --subject: #E06A4F;
     --shadow-rgb: 0 0 0;
+    --huruf: #D9AE6E;
+    --huruf-soft: #2A2216;
+    --harakat: #7FCBA8;
+    --eg: #8EC3E0;
+    --eg-soft: #152836;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --paper: #0D1526;
-  --paper-2: #121C31;
-  --surface: #16213A;
-  --ink: #EEE8DA;
-  --muted: #A6AFC3;
-  --rule: #26324D;
-  --accent: #9DB8E6;
-  --accent-ink: #0D1526;
-  --accent-soft: #1E2C4B;
-  --board: #1B2B4F;
-  --board-2: #25386A;
+  --paper: #0B1914;
+  --paper-2: #10221B;
+  --surface: #142A21;
+  --ink: #ECE9DE;
+  --muted: #A2B4AB;
+  --rule: #22382E;
+  --accent: #7FCBA8;
+  --accent-ink: #0B1914;
+  --accent-soft: #173427;
+  --board: #123A2D;
+  --board-2: #1B4C3B;
   --board-ink: #F2ECDF;
-  --board-muted: #AEB9D2;
+  --board-muted: #A8C1B5;
   --brass: #DDBA7E;
   --rung: #E2B45A;
   --rung-soft: #2C2516;
-  --good: #8FCB9F;
-  --good-bg: #16281F;
+  --good: #A6D68F;
+  --good-bg: #1B2A17;
   --off: #EE9A84;
   --off-bg: #331F1B;
-  --easy: #7CC4A0;
-  --easy-soft: #152A22;
+  --easy: #7CC4CF;
+  --easy-soft: #13282B;
   --medium: #9DB8E6;
   --medium-soft: #1E2C4B;
   --hard: #C1A8E6;
@@ -168,6 +178,11 @@
   --card-side: #8E7956;
   --subject: #E06A4F;
   --shadow-rgb: 0 0 0;
+  --huruf: #D9AE6E;
+  --huruf-soft: #2A2216;
+  --harakat: #7FCBA8;
+  --eg: #8EC3E0;
+  --eg-soft: #152836;
 }
 
 /* Text-size setting (100 / 115 / 130) */

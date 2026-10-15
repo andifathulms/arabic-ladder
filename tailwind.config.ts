@@ -36,6 +36,11 @@ const config: Config = {
       'easy-soft': v('easy-soft'),
       'medium-soft': v('medium-soft'),
       'hard-soft': v('hard-soft'),
+      huruf: v('huruf'),
+      'huruf-soft': v('huruf-soft'),
+      harakat: v('harakat'),
+      eg: v('eg'),
+      'eg-soft': v('eg-soft'),
     },
     fontFamily: {
       display: ['var(--font-display)', 'Georgia', 'serif'],
