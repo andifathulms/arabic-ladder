@@ -129,9 +129,6 @@ export const id = {
   'settings.explain.rung': 'Ikuti anak tangga',
   'settings.explain.id': 'Selalu Indonesia',
   'settings.explain.en': 'Selalu Inggris',
-  'settings.accent': 'Aksen suara',
-  'settings.accent.gb': 'Britania',
-  'settings.accent.us': 'Amerika',
   'settings.speed': 'Kecepatan suara',
   'settings.speed.slow': '0,75×',
   'settings.speed.normal': '1×',
@@ -157,7 +154,7 @@ export const id = {
   'settings.resetWarn': 'Ini menghapus semua pelajaran, tes dan kata. Tidak bisa dibatalkan.',
   'settings.resetDone': 'Progres sudah dihapus.',
   'settings.storageOff': 'Progres tidak tersimpan di browser ini.',
-  'settings.speechOff': 'Browser ini tidak punya suara bahasa Inggris, jadi tombol putar disembunyikan.',
+  'settings.speechOff': 'Browser ini tidak punya suara bahasa Arab. Rekaman tetap diputar; tombol putar lain disembunyikan.',
   'settings.on': 'Nyala',
   'settings.off': 'Mati',
 
@@ -214,7 +211,7 @@ export const id = {
   'lesson.words': 'Beda kata',
   'check.listenPrompt': 'Dengarkan, lalu pilih kalimat yang kamu dengar.',
   'check.listenPlay': 'Putar kalimat',
-  'check.listenNoAudio': 'Browser ini tidak punya suara bahasa Inggris. Baca kalimat ini, lalu pilih yang sama:',
+  'check.listenNoAudio': 'Tidak ada rekaman atau suara bahasa Arab di sini. Baca saja, lalu pilih:',
   'home.starterLink': 'Benar-benar baru? Mulai dari Starter: bunyi, huruf, angka dan sapaan.',
   'rung.optional': 'pilihan',
   'read.title': 'Baca dan dengar',
@@ -226,7 +223,6 @@ export const id = {
   'settings.voice.female': 'Perempuan',
   'settings.voice.male': 'Laki-laki',
   'settings.voiceSample': 'Coba suara',
-  'settings.voiceSampleText': 'Hello! This is your Arabic Ladder voice. Is it clear?',
   'settings.voiceUsing': 'Memakai suara: {name}',
 } as const;
 

@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { parseInline, stripMarkup } from '@/lib/markup';
+import { parseInline } from '@/lib/markup';
 import type { Bilingual } from '@/lib/types';
-import { PlayButton } from './PlayButton';
-import { useSpeak } from '../useSpeech';
 import { useT } from '../ProgressProvider';
 
 type Seg = { text: string; start: number; kind: 'text' | 'focus' | 'strong' | 'em'; group: number };
+
+/** Latin sentences only (Indonesian, transliteration). Arabic goes through ArSentence. */
 
 /** Splits markup into word-level segments carrying their offset in the plain string. */
 export function segments(src: string): Seg[] {
@@ -26,7 +26,7 @@ export function segments(src: string): Seg[] {
 type Props = {
   en: string;
   id?: string;
-  /** Show the play button (default true). */
+  /** Kept for call sites; Latin sentences have no audio in Arabic Ladder. */
   play?: boolean;
   /** Style: the big taught sentence, or inline/body size. */
   size?: 'sentence' | 'body';
@@ -36,24 +36,10 @@ type Props = {
   className?: string;
 };
 
-export function Sentence({ en, id, play = true, size = 'sentence', note, off, className = '' }: Props) {
+export function Sentence({ en, id, size = 'sentence', note, off, className = '' }: Props) {
   const { t, lang } = useT();
-  const speak = useSpeak();
-  const plain = useMemo(() => stripMarkup(en), [en]);
   const segs = useMemo(() => segments(en), [en]);
-  const [spoken, setSpoken] = useState<number | null>(null);
-  const [playing, setPlaying] = useState(false);
   const [showNote, setShowNote] = useState(false);
-
-  const onPlay = async () => {
-    setPlaying(true);
-    await speak(plain, (i) => setSpoken(i));
-    setPlaying(false);
-    setSpoken(null);
-  };
-
-  const activeIdx =
-    spoken === null ? -1 : segs.findIndex((s) => s.start <= spoken && spoken < s.start + s.text.length && s.text.trim());
 
   // Render groups so a multi-word focus stays one underlined span.
   const groups: Seg[][] = [];
@@ -65,14 +51,7 @@ export function Sentence({ en, id, play = true, size = 'sentence', note, off, cl
 
   const renderSeg = (s: Seg) => {
     const i = segs.indexOf(s);
-    return (
-      <span
-        key={i}
-        className={i === activeIdx ? 'rounded-sm bg-accent-soft transition-colors duration-quick' : undefined}
-      >
-        {s.text}
-      </span>
-    );
+    return <span key={i}>{s.text}</span>;
   };
 
   const noteText = note === true ? t('lesson.focusNote') : note ? (lang === 'en' ? note.en : note.id) : null;
@@ -111,11 +90,6 @@ export function Sentence({ en, id, play = true, size = 'sentence', note, off, cl
             return <span key={gi}>{inner}</span>;
           })}
         </p>
-        {play && !off && (
-          <span className={size === 'sentence' ? 'mt-[2px]' : '-mt-[8px]'}>
-            <PlayButton text={plain} onPlay={onPlay} playing={playing} small />
-          </span>
-        )}
       </div>
       {id && (
         <p lang="id" className="id-text">

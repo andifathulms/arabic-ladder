@@ -95,10 +95,10 @@ describe('CheckItemView (listen)', () => {
     answer: "I'm tired.",
     why,
   };
-  it('shows the sentence when the browser has no English voice, and still grades', () => {
+  it('shows the text when nothing can play it, and still grades', () => {
     const onSolved = vi.fn();
     wrap(<CheckItemView mode="practice" item={listen} onSolved={onSolved} />);
-    expect(screen.getByText(/tidak punya suara bahasa Inggris/)).toBeInTheDocument();
+    expect(screen.getByText(/Tidak ada rekaman atau suara bahasa Arab/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: "I'm tired." }));
     expect(onSolved).toHaveBeenCalledWith(true);
   });

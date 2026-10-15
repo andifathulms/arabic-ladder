@@ -1,26 +1,32 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { canSpeak, onVoicesChanged, speak } from '@/lib/speech/speak';
+import { onVoicesChanged } from '@/lib/speech/speak';
+import { canPlay, loadManifest, onManifest, play, type Variety } from '@/lib/speech/audio';
 import { useSettings } from './ProgressProvider';
 
-/** Whether English speech is available, updated when voices load. False on the server. */
-export function useCanSpeak(): boolean {
+/** Whether this string can be played (recording or Arabic voice), updated as voices and the manifest load. */
+export function useCanPlay(text: string, variety: Variety = 'fusha'): boolean {
   const [ok, setOk] = useState(false);
   useEffect(() => {
-    setOk(canSpeak());
-    const off = onVoicesChanged(() => setOk(canSpeak()));
+    const check = () => setOk(canPlay(text, variety));
+    check();
+    void loadManifest().then(check);
+    const offV = onVoicesChanged(check);
+    const offM = onManifest(check);
     return () => {
-      off();
+      offV();
+      offM();
     };
-  }, []);
+  }, [text, variety]);
   return ok;
 }
 
-export function useSpeak() {
-  const { accent, voice, rate } = useSettings();
+/** Plays Arabic with the learner's pace and voice settings. */
+export function usePlay() {
+  const { voice, rate } = useSettings();
   return useCallback(
-    (text: string, onBoundary?: (i: number) => void) => speak(text, { accent, gender: voice, rate, onBoundary }),
-    [accent, voice, rate],
+    (text: string, variety: Variety = 'fusha', onWord?: (i: number) => void) => play(text, { variety, rate, gender: voice, onWord }),
+    [voice, rate],
   );
 }

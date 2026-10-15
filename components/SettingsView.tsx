@@ -7,10 +7,13 @@ import { useSettings, useT } from './ProgressProvider';
 import { PageShell } from './ui/PageShell';
 import { Segmented } from './ui/Segmented';
 import { Toggle } from './ui/Toggle';
-import { useCanSpeak, useSpeak } from './useSpeech';
+import { usePlay } from './useSpeech';
 import { IconPlay } from './ui/Icon';
-import { chosenVoiceName } from '@/lib/speech/speak';
+import { canSpeak as browserCanSpeak, chosenVoiceName, onVoicesChanged } from '@/lib/speech/speak';
 import { ArIsland } from './ar/ArIsland';
+
+/** أَهْلًا وَسَهْلًا: the sample line for “Coba suara”. */
+const VOICE_SAMPLE = 'أَهْلًا وَسَهْلًا';
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -34,12 +37,17 @@ export function SettingsView() {
   const { t } = useT();
   const s = useSettings();
   const set = (patch: Partial<Settings>) => store.setSettings(patch);
-  const canSpeak = useCanSpeak();
-  const speakSample = useSpeak();
+  const [canSpeak, setCanSpeak] = useState(false);
+  const playSample = usePlay();
   const [voiceName, setVoiceName] = useState<string | null>(null);
   useEffect(() => {
-    if (canSpeak) setVoiceName(chosenVoiceName(s.accent, s.voice));
-  }, [canSpeak, s.accent, s.voice]);
+    const check = () => {
+      setCanSpeak(browserCanSpeak());
+      setVoiceName(chosenVoiceName('fusha', s.voice));
+    };
+    check();
+    return onVoicesChanged(check) as () => void;
+  }, [s.voice]);
   const [storageOk, setStorageOk] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -98,17 +106,6 @@ export function SettingsView() {
 
       <Group title={t('settings.group.sound')}>
         {!canSpeak && <p className="text-small text-muted">{t('settings.speechOff')}</p>}
-        <Row label={t('settings.accent')}>
-          <Segmented
-            label={t('settings.accent')}
-            value={s.accent}
-            onChange={(v) => set({ accent: v })}
-            options={[
-              { value: 'gb', label: t('settings.accent.gb') },
-              { value: 'us', label: t('settings.accent.us') },
-            ]}
-          />
-        </Row>
         <Row label={t('settings.voice')}>
           <Segmented
             label={t('settings.voice')}
@@ -120,14 +117,13 @@ export function SettingsView() {
             ]}
           />
         </Row>
-        {canSpeak && (
-          <div className="flex flex-col gap-1">
-            <button type="button" className="btn btn-ghost self-start" onClick={() => speakSample(t('settings.voiceSampleText'))}>
-              <IconPlay size={18} /> {t('settings.voiceSample')}
-            </button>
-            {voiceName && <p className="text-small text-muted">{t('settings.voiceUsing', { name: voiceName })}</p>}
-          </div>
-        )}
+        <div className="flex flex-col gap-1">
+          {/* Plays the recorded sample when there is one, else the browser's Arabic voice. */}
+          <button type="button" className="btn btn-ghost self-start" onClick={() => void playSample(VOICE_SAMPLE)}>
+            <IconPlay size={18} /> {t('settings.voiceSample')}
+          </button>
+          {canSpeak && voiceName && <p className="text-small text-muted">{t('settings.voiceUsing', { name: voiceName })}</p>}
+        </div>
         <Row label={t('settings.speed')}>
           <Segmented
             label={t('settings.speed')}

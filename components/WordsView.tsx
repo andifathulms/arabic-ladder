@@ -9,12 +9,12 @@ import { useProgress, useT } from './ProgressProvider';
 import { PageShell } from './ui/PageShell';
 import { PlayButton } from './lesson/PlayButton';
 import { IconBook, IconSearch } from './ui/Icon';
-import { useSpeak } from './useSpeech';
+import { usePlay } from './useSpeech';
 
 export function WordsView({ lessons }: { lessons: LessonSummary[] }) {
   const { t } = useT();
   const progress = useProgress();
-  const speak = useSpeak();
+  const speak = usePlay();
   const [q, setQ] = useState('');
   const [only, setOnly] = useState<string | null>(null);
   const [mistakes, setMistakes] = useState(false);

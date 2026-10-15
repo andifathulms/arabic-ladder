@@ -12,7 +12,7 @@ import { Sentence } from '../lesson/Sentence';
 import { VisualStage } from '../visuals/VisualStage';
 import { IconPlay } from '../ui/Icon';
 import { useT } from '../ProgressProvider';
-import { useCanSpeak, useSpeak } from '../useSpeech';
+import { useCanPlay, usePlay } from '../useSpeech';
 
 type Common = {
   item: CheckItem;
@@ -51,15 +51,15 @@ function Prompt({ text, fill }: { text: string; fill?: string }) {
 }
 
 /** Plays the sentence to identify. Without an English voice, the sentence is shown instead. */
-function ListenPrompt({ audio, prompt }: { audio: string; prompt?: string }) {
+function ListenPrompt({ audio, prompt, variety }: { audio: string; prompt?: string; variety: 'fusha' | 'eg' }) {
   const { t } = useT();
-  const canSpeak = useCanSpeak();
-  const speak = useSpeak();
+  const canSpeak = useCanPlay(audio, variety);
+  const speak = usePlay();
   const [playing, setPlaying] = useState(false);
   const plain = stripMarkup(audio);
   const play = async () => {
     setPlaying(true);
-    await speak(plain);
+    await speak(plain, variety);
     setPlaying(false);
   };
   return (
@@ -195,7 +195,7 @@ export function CheckItemView(props: Practice | Test) {
           <p className="text-small text-muted">{item.prompt ?? t('check.scenePrompt')}</p>
         </div>
       )}
-      {item.type === 'listen' && <ListenPrompt audio={item.audio} prompt={item.prompt} />}
+      {item.type === 'listen' && <ListenPrompt audio={item.audio} prompt={item.prompt} variety={item.variety} />}
       {item.type === 'order' && item.prompt && <Prompt text={item.prompt} />}
 
       {item.type === 'order' ? (

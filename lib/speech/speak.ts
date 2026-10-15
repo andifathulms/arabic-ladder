@@ -1,8 +1,8 @@
-// Web Speech API wrapper. Resolves silently when speech is unavailable.
+// Web Speech API wrapper: the fallback when no recording exists. Resolves silently when speech is unavailable.
 
-export type Accent = 'gb' | 'us';
+export type Variety = 'fusha' | 'eg';
 export type VoiceGender = 'female' | 'male';
-type Opts = { accent?: Accent; gender?: VoiceGender; rate?: number; onBoundary?: (charIndex: number) => void };
+type Opts = { variety?: Variety; gender?: VoiceGender; rate?: number; onBoundary?: (charIndex: number) => void };
 
 let voices: SpeechSynthesisVoice[] = [];
 let listening = false;
@@ -36,22 +36,25 @@ export function onVoicesChanged(l: () => void) {
 const NOVELTY = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy|espeak|compact)\b/i;
 // Markers of the clearer neural or network voices.
 const CLEAR = /\b(natural|neural|online|enhanced|premium|siri)\b|^google\b/i;
-const FEMALE = /\b(female|woman|samantha|serena|kate|stephanie|martha|karen|moira|tessa|fiona|victoria|allison|ava|susan|zoe|libby|sonia|mia|hazel|aria|jenny|michelle|zira|emma|amy|joanna|salli|kimberly|ivy|nicky|catherine|sara|olivia)\b/i;
-const MALE = /\b(male|man|daniel|arthur|oliver|alex|tom|aaron|evan|nathan|george|ryan|thomas|guy|david|mark|christopher|eric|james|brian|matthew|joey|justin|rishi|lee)\b/i;
+const FEMALE = /\b(female|woman|hoda|salma|zariyah|laila|layla|amina|amira|mariam|sana|fatima|rana|lana|mouna|mona|reem|iman|nour|yasmin|sara)\b/i;
+const MALE = /\b(male|man|maged|majed|naayf|shakir|hamed|tarik|tariq|omar|hamdan|fahed|bassel|moaz|taim|rami|jamal|karim)\b/i;
 
 const norm = (v: SpeechSynthesisVoice) => v.lang.replace('_', '-').toLowerCase();
 
-/** Higher is better: accent first, then a clear voice, then the preferred gender. */
-export function scoreVoice(v: SpeechSynthesisVoice, accent: Accent = 'gb', gender: VoiceGender = 'female'): number {
+/**
+ * Higher is better. Arabic only. Egyptian prefers ar-EG; Fusha prefers ar-SA, then any ar-*.
+ * Then a clear voice, then the preferred gender.
+ */
+export function scoreVoice(v: SpeechSynthesisVoice, variety: Variety = 'fusha', gender: VoiceGender = 'female'): number {
   const lang = norm(v);
-  if (!lang.startsWith('en')) return -Infinity;
-  const want = accent === 'gb' ? 'en-gb' : 'en-us';
-  const other = accent === 'gb' ? 'en-us' : 'en-gb';
-  let score = lang === want ? 300 : lang === other ? 200 : 100;
+  if (!lang.startsWith('ar')) return -Infinity;
+  let score = 100;
+  if (variety === 'eg') score = lang === 'ar-eg' ? 300 : 150;
+  else score = lang === 'ar-sa' ? 300 : lang === 'ar' || lang === 'ar-001' ? 260 : lang === 'ar-eg' ? 180 : 200;
   const name = v.name;
   if (NOVELTY.test(name)) score -= 1000;
   if (CLEAR.test(name)) score += 60;
-  // "Female" names win over "male" substrings (e.g. "Google UK English Female").
+  // "Female" names win over "male" substrings.
   const isFemale = FEMALE.test(name);
   const isMale = !isFemale && MALE.test(name);
   if (gender === 'female' ? isFemale : isMale) score += 40;
@@ -62,13 +65,13 @@ export function scoreVoice(v: SpeechSynthesisVoice, accent: Accent = 'gb', gende
 
 export function pickVoice(
   list: SpeechSynthesisVoice[],
-  accent: Accent = 'gb',
+  variety: Variety = 'fusha',
   gender: VoiceGender = 'female',
 ): SpeechSynthesisVoice | null {
   let best: SpeechSynthesisVoice | null = null;
   let bestScore = -Infinity;
   for (const v of list) {
-    const s = scoreVoice(v, accent, gender);
+    const s = scoreVoice(v, variety, gender);
     if (s > bestScore) {
       best = v;
       bestScore = s;
@@ -77,11 +80,11 @@ export function pickVoice(
   return bestScore > -Infinity ? best : null;
 }
 
-/** Splits long text at sentence ends: some engines cut off or slur long utterances. */
+/** Splits long text at sentence ends (Latin and Arabic): some engines cut off or slur long utterances. */
 export function chunks(text: string, max = 160): { text: string; start: number }[] {
   if (text.length <= max) return [{ text, start: 0 }];
   const out: { text: string; start: number }[] = [];
-  const re = /[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g;
+  const re = /[^.!?؟۔]+[.!?؟۔]+["')\]»]*\s*|[^.!?؟۔]+$/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
     const last = out[out.length - 1];
@@ -92,18 +95,16 @@ export function chunks(text: string, max = 160): { text: string; start: number }
 }
 
 /** The voice speak() would use now, for showing in Settings. */
-export function chosenVoiceName(accent: Accent = 'gb', gender: VoiceGender = 'female'): string | null {
+export function chosenVoiceName(variety: Variety = 'fusha', gender: VoiceGender = 'female'): string | null {
   if (!synth()) return null;
   refreshVoices();
-  return pickVoice(voices, accent, gender)?.name ?? null;
+  return pickVoice(voices, variety, gender)?.name ?? null;
 }
 
-/** True when the browser can speak English. Play buttons render only when true. */
+/** True when the browser can speak Arabic. */
 export function canSpeak(): boolean {
   if (!synth()) return false;
   refreshVoices();
-  // Some browsers report no voices until voiceschanged; treat "has speechSynthesis" as enough
-  // only once voices have loaded and include English.
   return pickVoice(voices) !== null;
 }
 
@@ -121,7 +122,7 @@ export function speak(text: string, opts: Opts = {}): Promise<void> {
   const s = synth();
   if (!s) return Promise.resolve();
   refreshVoices();
-  const voice = pickVoice(voices, opts.accent, opts.gender);
+  const voice = pickVoice(voices, opts.variety, opts.gender);
   if (!voice) return Promise.resolve();
   s.cancel();
   const mine = ++generation;
@@ -132,7 +133,7 @@ export function speak(text: string, opts: Opts = {}): Promise<void> {
       const u = new SpeechSynthesisUtterance(part.text);
       u.voice = voice;
       u.lang = voice.lang;
-      u.rate = (opts.rate ?? 1) * 0.95;
+      u.rate = (opts.rate ?? 1) * 0.9;
       u.pitch = 1;
       u.volume = 1;
       if (opts.onBoundary) {

@@ -1,53 +1,68 @@
 import { describe, expect, it } from 'vitest';
 import { chunks, pickVoice } from '@/lib/speech/speak';
+import { sha1 } from '@/lib/speech/sha1';
+import { __setManifest, audioFor, audioKey } from '@/lib/speech/audio';
 
 const v = (name: string, lang: string, extra: Partial<SpeechSynthesisVoice> = {}) =>
   ({ name, lang, localService: true, default: false, voiceURI: name, ...extra }) as SpeechSynthesisVoice;
 
-// Roughly what Chrome on macOS reports, novelty voices first.
-const mac = [
+const voices = [
   v('Albert', 'en-US'),
-  v('Bad News', 'en-US'),
-  v('Daniel', 'en-GB'),
-  v('Samantha', 'en-US'),
-  v('Google US English', 'en-US', { localService: false }),
-  v('Google UK English Female', 'en-GB', { localService: false }),
-  v('Google UK English Male', 'en-GB', { localService: false }),
+  v('Maged', 'ar-SA'),
+  v('Microsoft Hoda - Arabic (Egypt)', 'ar-EG'),
+  v('Microsoft Salma Online (Natural) - Arabic (Egypt)', 'ar-EG', { localService: false }),
+  v('Microsoft Zariyah Online (Natural) - Arabic (Saudi Arabia)', 'ar-SA', { localService: false }),
+  v('Microsoft Hamed Online (Natural) - Arabic (Saudi Arabia)', 'ar-SA', { localService: false }),
   v('Damayanti', 'id-ID'),
 ];
 
 describe('pickVoice', () => {
-  it('prefers a clear British female voice by default', () => {
-    expect(pickVoice(mac)?.name).toBe('Google UK English Female');
+  it('prefers a clear Saudi female voice for Fusha', () => {
+    expect(pickVoice(voices, 'fusha')?.name).toMatch(/Zariyah/);
   });
-  it('honours a male preference within the accent', () => {
-    expect(pickVoice(mac, 'gb', 'male')?.name).toBe('Google UK English Male');
+  it('prefers ar-EG for Egyptian', () => {
+    expect(pickVoice(voices, 'eg')?.name).toMatch(/Salma/);
   });
-  it('never picks a novelty voice when a real one exists', () => {
-    const list = [v('Albert', 'en-US'), v('Zarvox', 'en-US'), v('Samantha', 'en-US')];
-    expect(pickVoice(list, 'us')?.name).toBe('Samantha');
+  it('honours a male preference', () => {
+    expect(pickVoice(voices, 'fusha', 'male')?.name).toMatch(/Hamed/);
   });
-  it('prefers Microsoft neural voices on Windows', () => {
-    const win = [
-      v('Microsoft David - English (United States)', 'en-US'),
-      v('Microsoft Zira - English (United States)', 'en-US'),
-      v('Microsoft Libby Online (Natural) - English (United Kingdom)', 'en-GB', { localService: false }),
-    ];
-    expect(pickVoice(win)?.name).toMatch(/Libby/);
+  it('falls back to any Arabic voice', () => {
+    expect(pickVoice([v('Maged', 'ar-SA')], 'eg')?.name).toBe('Maged');
   });
-  it('returns null without English voices', () => {
-    expect(pickVoice([v('Damayanti', 'id-ID')])).toBeNull();
+  it('returns null without Arabic voices', () => {
+    expect(pickVoice([v('Damayanti', 'id-ID'), v('Samantha', 'en-US')])).toBeNull();
   });
 });
 
 describe('chunks', () => {
   it('keeps short text whole', () => {
-    expect(chunks('I am ready.')).toEqual([{ text: 'I am ready.', start: 0 }]);
+    expect(chunks('أَنَا طَالِبٌ.')).toEqual([{ text: 'أَنَا طَالِبٌ.', start: 0 }]);
   });
-  it('splits long text at sentence ends and keeps offsets', () => {
-    const text = 'This is Rina. She is a nurse. Her hospital is next to a big mosque.';
-    const parts = chunks(text, 30);
-    expect(parts.map((p) => p.text)).toEqual(['This is Rina. She is a nurse.', 'Her hospital is next to a big mosque.']);
+  it('splits on Arabic and Latin sentence ends and keeps offsets', () => {
+    const text = 'مَا هٰذَا؟ هٰذَا كِتَابٌ. This is long enough.';
+    const parts = chunks(text, 20);
+    expect(parts.map((p) => p.text)).toEqual(['مَا هٰذَا؟', 'هٰذَا كِتَابٌ.', 'This is long enough.']);
     for (const p of parts) expect(text.slice(p.start, p.start + p.text.length)).toBe(p.text);
+  });
+});
+
+describe('audio keys', () => {
+  it('sha1 matches the standard test vectors', () => {
+    expect(sha1('abc')).toBe('a9993e364706816aba3e25717850c26c9cd0d89d');
+    expect(sha1('')).toBe('da39a3ee5e6b4b0d3255bfef95601890afd80709');
+  });
+  it('keys normalised text plus variety, 12 hex digits', () => {
+    const k = audioKey('كِتَابٌ', 'fusha');
+    expect(k).toMatch(/^[0-9a-f]{12}$/);
+    expect(audioKey('كِتَابٌ  ', 'fusha')).toBe(k);
+    expect(audioKey('[[كِتَابٌ]]', 'fusha')).toBe(k);
+    expect(audioKey('كِتَابٌ', 'eg')).not.toBe(k);
+    expect(audioKey('كِتَابٌ', 'fusha')).toBe(sha1('كِتَابٌ|fusha').slice(0, 12));
+  });
+  it('looks recordings up in the manifest', () => {
+    __setManifest({ [audioKey('بَ')]: { file: 'x.mp3', dur: 400 } });
+    expect(audioFor('بَ')?.file).toBe('x.mp3');
+    expect(audioFor('بِ')).toBeNull();
+    __setManifest(null);
   });
 });

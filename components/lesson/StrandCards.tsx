@@ -5,7 +5,7 @@ import type { Bilingual, Lesson } from '@/lib/types';
 import { Prose } from './Prose';
 import { PlayButton } from './PlayButton';
 import { Sentence } from './Sentence';
-import { useSpeak } from '../useSpeech';
+import { usePlay } from '../useSpeech';
 import { useT } from '../ProgressProvider';
 
 type Lang = 'id' | 'en';
@@ -38,7 +38,7 @@ export function TalkCard({ talk }: { talk: NonNullable<Lesson['talk']> }) {
 /** One pronunciation point with words to play. Shown on the Examples step. */
 export function SoundCard({ sound, explain }: { sound: NonNullable<Lesson['sound']>; explain: Lang }) {
   const { t } = useT();
-  const speak = useSpeak();
+  const speak = usePlay();
   const [playing, setPlaying] = useState<string | null>(null);
   const play = async (w: string) => {
     setPlaying(w);
