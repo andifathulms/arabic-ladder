@@ -1,15 +1,22 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CheckItem } from '@/lib/types';
 import { grade, type Response } from '@/lib/check/grade';
+import { rng, shuffle } from '@/lib/check/random';
 import { sfx } from '@/lib/speech/sfx';
 import { stripMarkup } from '@/lib/markup';
+import { hasArabic } from '@/lib/arabic/text';
+import { withoutMark } from '@/lib/arabic/marks';
 import { OptionPill, type PillState } from './OptionPill';
 import { TileTray } from './TileTray';
+import { ArTileTray } from './ArTileTray';
+import { MarkOption } from './MarkOption';
 import { WhyLine } from './WhyLine';
 import { Sentence } from '../lesson/Sentence';
 import { VisualStage } from '../visuals/VisualStage';
+import { ArIsland } from '../ar/ArIsland';
+import { ArSentence } from '../ar/ArSentence';
 import { IconPlay } from '../ui/Icon';
 import { useT } from '../ProgressProvider';
 import { useCanPlay, usePlay } from '../useSpeech';
@@ -29,96 +36,137 @@ type Practice = Common & {
 };
 type Test = Common & { mode: 'test'; value?: Response; onChange: (r: Response) => void };
 
+const seedOf = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+
+/** A choice/gap prompt. Arabic prompts are an RTL island with the blank as an underline. */
 function Prompt({ text, fill }: { text: string; fill?: string }) {
   const [a, b] = text.split('___');
-  if (b === undefined) return <Sentence en={text} play={false} />;
+  if (b === undefined) {
+    return hasArabic(text) ? <ArSentence ar={text} play={false} showTranslit={false} /> : <Sentence en={text} />;
+  }
+  const blank = (
+    <>
+      <span aria-hidden className="mx-1 inline-block w-[3.5em] border-b-2 border-ink align-baseline">
+        &nbsp;
+      </span>
+      <span className="sr-only">blank</span>
+    </>
+  );
+  if (hasArabic(text) || (fill && hasArabic(fill))) {
+    return (
+      <ArIsland block as="p" size="sentence" className="text-ink">
+        {stripMarkup(a)}
+        {fill ? <span className="ar-focus">{fill}</span> : blank}
+        {stripMarkup(b)}
+      </ArIsland>
+    );
+  }
   return (
-    <p lang="en" className="font-display text-sentence font-medium text-ink">
+    <p lang="id" className="font-display text-sentence font-medium text-ink">
       {stripMarkup(a)}
-      {fill ? (
-        <span className="focus-word">{fill}</span>
-      ) : (
-        <>
-          <span aria-hidden className="inline-block w-[3.5em] border-b-2 border-ink align-baseline">
-            &nbsp;
-          </span>
-          <span className="sr-only">blank</span>
-        </>
-      )}
+      {fill ? <span className="focus-word">{fill}</span> : blank}
       {stripMarkup(b)}
     </p>
   );
 }
 
-/** Plays the sentence to identify. Without an English voice, the sentence is shown instead. */
-function ListenPrompt({ audio, prompt, variety }: { audio: string; prompt?: string; variety: 'fusha' | 'eg' }) {
-  const { t } = useT();
-  const canSpeak = useCanPlay(audio, variety);
-  const speak = usePlay();
+/** A big round play button for listen and dictation items. */
+function BigPlay({ audio, variety, label }: { audio: string; variety: 'fusha' | 'eg'; label: string }) {
+  const play = usePlay();
   const [playing, setPlaying] = useState(false);
-  const plain = stripMarkup(audio);
-  const play = async () => {
+  const run = async () => {
     setPlaying(true);
-    await speak(plain, variety);
+    await play(stripMarkup(audio), variety);
     setPlaying(false);
   };
   return (
+    <button
+      type="button"
+      onClick={run}
+      aria-pressed={playing || undefined}
+      aria-label={label}
+      className="flex h-[56px] w-[56px] items-center justify-center rounded-full bg-accent text-accent-ink"
+      data-play
+    >
+      <IconPlay size={24} />
+    </button>
+  );
+}
+
+/** Plays the line to identify. With no recording and no Arabic voice, the text is shown instead. */
+function ListenPrompt({ audio, prompt, variety }: { audio: string; prompt?: string; variety: 'fusha' | 'eg' }) {
+  const { t } = useT();
+  const canPlay = useCanPlay(audio, variety);
+  return (
     <div className="flex flex-col gap-3">
       <p className="text-small text-muted">{prompt ?? t('check.listenPrompt')}</p>
-      {canSpeak ? (
-        <button
-          type="button"
-          onClick={play}
-          aria-pressed={playing || undefined}
-          className={`btn self-start ${playing ? 'btn-primary' : 'btn-ghost'}`}
-        >
-          <IconPlay size={18} /> {t('check.listenPlay')}
-        </button>
+      {canPlay ? (
+        <BigPlay audio={audio} variety={variety} label={t('check.listenPlay')} />
       ) : (
         <div className="flex flex-col gap-1 rounded-md bg-paper-2 p-4">
           <p className="text-small text-muted">{t('check.listenNoAudio')}</p>
-          <Sentence en={audio} play={false} />
+          <ArSentence ar={audio} variety={variety} play={false} showTranslit={false} size="body" />
         </div>
       )}
     </div>
   );
 }
 
+/** The word with the target letter's mark hidden: the letter sits in a dashed circle. */
+function MarkPrompt({ ar, target, shown }: { ar: string; target: number; shown?: string }) {
+  const { before, letter, after } = withoutMark(stripMarkup(ar), target);
+  return (
+    <ArIsland block as="p" size="sentence" className="text-center text-ink" aria-label={stripMarkup(ar)}>
+      {before}
+      <span className="relative inline-block rounded-full px-1 outline-dashed outline-2 outline-offset-4 outline-accent">
+        {letter}
+        {shown}
+      </span>
+      {after}
+    </ArIsland>
+  );
+}
+
 export function CheckItemView(props: Practice | Test) {
   const { item } = props;
   const { t } = useT();
+  const practice = props.mode === 'practice';
   const [wrong, setWrong] = useState<string[]>([]);
-  const [solved, setSolved] = useState(props.mode === 'practice' && !!props.solved);
+  const [solved, setSolved] = useState(practice && !!(props as Practice).solved);
+  const missesRef = useRef(0);
+
+  // Tiles for order and spell items. Spell tiles are shuffled deterministically per item.
+  const tiles = useMemo(() => {
+    if (item.type === 'order') return item.tiles;
+    if (item.type === 'spell') return shuffle([...item.letters, ...item.distractors], rng(seedOf(item.id)));
+    return [];
+  }, [item]);
+  const answerTiles = item.type === 'order' ? item.answer : item.type === 'spell' ? item.letters : [];
   const [placed, setPlaced] = useState<number[]>(() => {
-    if (item.type !== 'order') return [];
-    if (props.mode === 'practice' && props.solved) return item.answer.map((w) => item.tiles.indexOf(w));
-    if (props.mode === 'test' && Array.isArray(props.value)) {
-      const used = new Set<number>();
-      return props.value.map((w) => {
-        const i = item.tiles.findIndex((x, j) => x === w && !used.has(j));
-        used.add(i);
-        return i;
-      });
-    }
+    const used = new Set<number>();
+    const indexOf = (w: string) => {
+      const i = tiles.findIndex((x, j) => x === w && !used.has(j));
+      used.add(i);
+      return i;
+    };
+    if (practice && (props as Practice).solved) return answerTiles.map(indexOf);
+    if (!practice && Array.isArray((props as Test).value)) return ((props as Test).value as string[]).map(indexOf);
     return [];
   });
-  const [orderOff, setOrderOff] = useState(false);
-  const missesRef = useRef(0);
-  const liveRef = useRef<HTMLParagraphElement>(null);
+  const [tilesOff, setTilesOff] = useState(false);
 
-  const options = 'options' in item ? item.options : [];
-  const practice = props.mode === 'practice';
+  const options: string[] = 'options' in item ? (item.options as string[]) : [];
 
   const pick = (opt: string) => {
     if (!practice) {
-      props.onChange(opt);
+      (props as Test).onChange(opt);
       return;
     }
     if (solved || wrong.includes(opt)) return;
     if (grade(item, opt).correct) {
       setSolved(true);
       sfx('correct');
-      props.onSolved(missesRef.current === 0);
+      (props as Practice).onSolved(missesRef.current === 0);
     } else {
       missesRef.current += 1;
       setWrong((w) => [...w, opt]);
@@ -126,17 +174,17 @@ export function CheckItemView(props: Practice | Test) {
     }
   };
 
-  const checkOrder = () => {
-    if (item.type !== 'order' || !practice) return;
-    const resp = placed.map((i) => item.tiles[i]);
+  const checkTiles = () => {
+    if (!practice) return;
+    const resp = placed.map((i) => tiles[i]);
     if (grade(item, resp).correct) {
       setSolved(true);
-      setOrderOff(false);
+      setTilesOff(false);
       sfx('correct');
-      props.onSolved(missesRef.current === 0);
+      (props as Practice).onSolved(missesRef.current === 0);
     } else {
       missesRef.current += 1;
-      setOrderOff(true);
+      setTilesOff(true);
       setWrong((w) => [...w, resp.join(' ')]);
       sfx('wrong');
     }
@@ -160,17 +208,21 @@ export function CheckItemView(props: Practice | Test) {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  const answer = 'answer' in item && typeof item.answer === 'string' ? item.answer : '';
   const pillState = (opt: string): PillState => {
-    if (!practice) return props.value === opt ? 'selected' : 'idle';
-    if (solved && stripMarkup(opt) === stripMarkup(item.type === 'order' ? '' : item.answer)) return 'correct';
+    if (!practice) return (props as Test).value === opt ? 'selected' : 'idle';
+    if (solved && stripMarkup(opt) === stripMarkup(answer)) return 'correct';
     if (wrong.includes(opt)) return 'wrong';
     return 'idle';
   };
 
   const missed = wrong.length;
-  const inSheet = practice && !!props.whyInSheet;
+  const inSheet = practice && !!(props as Practice).whyInSheet;
   const showWhy = practice && (solved ? !inSheet : missed >= 2);
-  const sentenceOptions = item.type === 'fix' || item.type === 'scene' || item.type === 'listen';
+  const arabicOptions = options.some(hasArabic);
+  const wideOptions = arabicOptions || item.type === 'fix' || item.type === 'scene' || item.type === 'listen';
+  const tileItem = item.type === 'order' || item.type === 'spell';
+  const arabicTiles = item.type === 'spell' || (item.type === 'order' && item.tiles.some(hasArabic));
 
   return (
     <div className="flex flex-col gap-5" data-item={item.id}>
@@ -180,13 +232,11 @@ export function CheckItemView(props: Practice | Test) {
         </p>
       )}
 
-      {(item.type === 'choice' || item.type === 'gap') && (
-        <Prompt text={item.prompt} fill={solved ? item.answer : undefined} />
-      )}
+      {(item.type === 'choice' || item.type === 'gap') && <Prompt text={item.prompt} fill={solved ? item.answer : undefined} />}
       {item.type === 'fix' && (
         <div className="flex flex-col gap-2">
           <p className="text-small text-muted">{t('check.fixPrompt')}</p>
-          <Sentence en={item.wrong} off play={false} />
+          {hasArabic(item.wrong) ? <ArSentence ar={item.wrong} off play={false} showTranslit={false} /> : <Sentence en={item.wrong} off />}
         </div>
       )}
       {item.type === 'scene' && (
@@ -196,40 +246,98 @@ export function CheckItemView(props: Practice | Test) {
         </div>
       )}
       {item.type === 'listen' && <ListenPrompt audio={item.audio} prompt={item.prompt} variety={item.variety} />}
+      {/* Reading items never show transliteration, whatever the rung's setting (CLAUDE.md §5.3). */}
+      {item.type === 'read' && (
+        <div className="flex flex-col gap-3">
+          <p className="text-small text-muted">{item.prompt ?? t('check.readPrompt')}</p>
+          <div className="rounded-lg bg-paper-2 px-4 py-3">
+            <ArSentence
+              ar={item.ar}
+              size={[...stripMarkup(item.ar)].filter((c) => /[ء-ي]/.test(c)).length <= 2 ? 'glyph' : 'sentence'}
+              play={false}
+              showTranslit={false}
+            />
+          </div>
+        </div>
+      )}
+      {item.type === 'mark' && (
+        <div className="flex flex-col gap-3">
+          <p className="text-small text-muted">{item.prompt ?? t('check.markPrompt')}</p>
+          <div className="rounded-lg bg-paper-2 px-4 py-4">
+            <MarkPrompt ar={item.ar} target={item.target} />
+          </div>
+        </div>
+      )}
+      {item.type === 'spell' && (
+        <div className="flex flex-col gap-3">
+          {item.prompt && <p className="text-small text-muted">{item.prompt}</p>}
+          {item.dictation && item.audio && (
+            <div className="flex items-center gap-3">
+              <BigPlay audio={item.audio} variety="fusha" label={t('check.dictationPlay')} />
+              <span className="text-small text-muted">{t('check.dictationHint')}</span>
+            </div>
+          )}
+        </div>
+      )}
       {item.type === 'order' && item.prompt && <Prompt text={item.prompt} />}
 
-      {item.type === 'order' ? (
+      {tileItem ? (
         <div className="flex flex-col gap-3">
-          <TileTray
-            tiles={item.tiles}
-            placed={placed}
-            onChange={(p) => {
-              setPlaced(p);
-              setOrderOff(false);
-              if (!practice) props.onChange(p.map((i) => item.tiles[i]));
-            }}
-            locked={solved}
-            tone={solved ? 'good' : orderOff ? 'off' : 'idle'}
-          />
+          {arabicTiles ? (
+            <ArTileTray
+              tiles={tiles}
+              placed={placed}
+              mode={item.type === 'spell' ? 'spell' : 'order'}
+              slots={answerTiles.length}
+              onChange={(p) => {
+                setPlaced(p);
+                setTilesOff(false);
+                if (!practice) (props as Test).onChange(p.map((i) => tiles[i]));
+              }}
+              locked={solved}
+              tone={solved ? 'good' : tilesOff ? 'off' : 'idle'}
+            />
+          ) : (
+            <TileTray
+              tiles={tiles}
+              placed={placed}
+              onChange={(p) => {
+                setPlaced(p);
+                setTilesOff(false);
+                if (!practice) (props as Test).onChange(p.map((i) => tiles[i]));
+              }}
+              locked={solved}
+              tone={solved ? 'good' : tilesOff ? 'off' : 'idle'}
+            />
+          )}
           {practice && !solved && (
-            <button
-              type="button"
-              className="btn btn-primary self-start"
-              disabled={placed.length !== item.tiles.length}
-              onClick={checkOrder}
-            >
+            <button type="button" className="btn btn-primary self-start" disabled={placed.length !== answerTiles.length} onClick={checkTiles}>
               {t('check.checkOrder')}
             </button>
           )}
         </div>
+      ) : item.type === 'mark' ? (
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('check.markOptions')}>
+          {item.options.map((m, i) => (
+            <MarkOption
+              key={m}
+              mark={m}
+              index={i}
+              state={pillState(m)}
+              disabled={practice && (solved || wrong.includes(m))}
+              onClick={() => pick(m)}
+            />
+          ))}
+        </div>
       ) : (
-        <div className={sentenceOptions ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'} role="group">
+        <div className={wideOptions ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'} role="group">
           {options.map((opt, i) => (
             <OptionPill
               key={opt}
               label={opt}
               index={i}
-              wide={sentenceOptions}
+              wide={wideOptions}
+              badge={arabicOptions}
               state={pillState(opt)}
               disabled={practice && (solved || wrong.includes(opt))}
               onClick={() => pick(opt)}
@@ -238,7 +346,7 @@ export function CheckItemView(props: Practice | Test) {
         </div>
       )}
 
-      <div aria-live="polite" ref={liveRef} className="flex min-h-[1.6em] flex-col gap-2">
+      <div aria-live="polite" className="flex min-h-[1.6em] flex-col gap-2">
         {practice && !solved && missed > 0 && <p className="text-off">{t('check.wrong')}</p>}
         {practice && solved && !inSheet && <p className="sr-only">{t('check.correct')}</p>}
         {showWhy && <WhyLine why={item.why} hint={!solved} />}

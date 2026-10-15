@@ -5,3 +5,4 @@ export * from './join';
 export * from './translit';
 export * from './marks';
 export * from './display';
+export * from './names';
