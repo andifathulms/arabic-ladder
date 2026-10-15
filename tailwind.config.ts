@@ -46,6 +46,10 @@ const config: Config = {
       display: ['var(--font-display)', 'Georgia', 'serif'],
       body: ['var(--font-body)', 'system-ui', 'sans-serif'],
       mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+      // Arabic faces (DESIGN §4.1). Never apply these outside ArIsland.
+      ar: ['var(--font-ar)', 'serif'],
+      'ar-display': ['var(--font-ar-display)', 'var(--font-ar)', 'serif'],
+      'ar-ui': ['var(--font-ar-ui)', 'var(--font-ar)', 'sans-serif'],
     },
     fontSize: {
       hero: ['var(--t-hero)', { lineHeight: '1.05' }],
@@ -58,6 +62,12 @@ const config: Config = {
       tab: ['var(--t-tab)', { lineHeight: '1.2' }],
       card: ['var(--t-card)', { lineHeight: '1.15' }],
       wordmark: ['var(--t-wordmark)', { lineHeight: '1', letterSpacing: '-0.01em' }],
+      'ar-sentence': ['var(--t-ar-sentence)', { lineHeight: '2' }],
+      'ar-body': ['var(--t-ar-body)', { lineHeight: '1.9' }],
+      'ar-small': ['var(--t-ar-small)', { lineHeight: '1.8' }],
+      'ar-glyph': ['var(--t-ar-glyph)', { lineHeight: '1.4' }],
+      'ar-title': ['var(--t-ar-title)', { lineHeight: '1.6' }],
+      tr: ['var(--t-tr)', { lineHeight: '1.5' }],
     },
     spacing: {
       0: '0',

@@ -6,6 +6,8 @@ export type Settings = {
   rate: 0.75 | 1;
   sfx: boolean;
   textSize: 100 | 115 | 130;
+  /** Ukuran teks Arab: multiplies only Arabic type. */
+  arabicSize: 100 | 120 | 140;
   theme: 'system' | 'light' | 'dark';
   motion: 'system' | 'reduce';
 };

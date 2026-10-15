@@ -248,5 +248,5 @@
   animation: draw var(--m-check-d) var(--ease) both;
 }
 .notch-settle {
-  animation: notch-settle 1400ms var(--ease) both;
+  animation: notch-settle var(--m-settle-d) var(--ease) both;
 }

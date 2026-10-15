@@ -6,6 +6,7 @@ import type { ProgressState, Settings } from '@/lib/progress/types';
 import { translate, type StringKey, type UiLang } from '@/lib/i18n';
 import { registerServiceWorker } from '@/lib/sw';
 import { setSfxEnabled } from '@/lib/speech/sfx';
+import { THEME_COLOR } from '@/app/themeScript';
 
 const Ctx = createContext<ProgressState | null>(null);
 
@@ -15,9 +16,15 @@ function applySettings(s: Settings) {
   else d.setAttribute('data-theme', s.theme);
   if (s.textSize === 100) d.removeAttribute('data-text-size');
   else d.setAttribute('data-text-size', String(s.textSize));
+  if (s.arabicSize === 100) d.removeAttribute('data-ar-size');
+  else d.setAttribute('data-ar-size', String(s.arabicSize));
   if (s.motion === 'reduce') d.setAttribute('data-motion', 'reduce');
   else d.removeAttribute('data-motion');
   d.setAttribute('lang', s.uiLang);
+  // theme-color follows the in-app theme, not the OS (fixes English Ladder issue 14).
+  const dark =
+    s.theme === 'dark' || (s.theme === 'system' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? THEME_COLOR.dark : THEME_COLOR.light);
 }
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {

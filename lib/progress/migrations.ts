@@ -53,6 +53,7 @@ function normalize(s: Raw): ProgressState {
       rate: pick('rate', [0.75, 1]),
       sfx: pick('sfx', [true, false]),
       textSize: pick('textSize', [100, 115, 130]),
+      arabicSize: pick('arabicSize', [100, 120, 140]),
       theme: pick('theme', ['system', 'light', 'dark']),
       motion: pick('motion', ['system', 'reduce']),
     },

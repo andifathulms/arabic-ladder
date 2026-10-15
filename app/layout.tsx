@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { body, display, mono } from './fonts';
-import { themeScript } from './themeScript';
+import { fontVariables } from './fonts';
+import { THEME_COLOR, themeScript } from './themeScript';
 import { withBase } from '@/lib/basePath';
 import { ProgressProvider } from '@/components/ProgressProvider';
 
@@ -16,20 +16,19 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F6F2E9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0B1914' },
-  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="id"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      dir="ltr"
+      className={fontVariables}
       suppressHydrationWarning
     >
       <head>
+        {/* One theme-color, set from the in-app theme by the theme script and applySettings. */}
+        <meta name="theme-color" content={THEME_COLOR.light} />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>

@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rate: 1,
   sfx: true,
   textSize: 100,
+  arabicSize: 100,
   theme: 'light',
   motion: 'system',
 };

@@ -53,6 +53,18 @@
   --t-card: 1.3rem;
   --t-wordmark: 1.125rem;
 
+  /* Arabic type (DESIGN §4.2): larger and looser than Latin so harakat have room.
+     --ar-scale is the Arabic size setting (100 / 120 / 140); the general text size scales rem. */
+  --ar-scale: 1;
+  --t-ar-sentence-base: 2.125rem;
+  --t-ar-glyph-base: 5rem;
+  --t-ar-sentence: calc(var(--t-ar-sentence-base) * var(--ar-scale));
+  --t-ar-body: calc(1.5rem * var(--ar-scale));
+  --t-ar-small: calc(1.25rem * var(--ar-scale));
+  --t-ar-glyph: calc(var(--t-ar-glyph-base) * var(--ar-scale));
+  --t-ar-title: calc(1.75rem * var(--ar-scale));
+  --t-tr: var(--t-small);
+
   /* Space (DESIGN §5.1) */
   --s-1: 4px;
   --s-2: 8px;
@@ -86,6 +98,7 @@
   --m-moment-d: 900ms;
   --m-check-d: 250ms;
   --m-shift: 12px;
+  --m-settle-d: 1400ms;
 
   /* Illustration (DESIGN §10) */
   --glass-opacity: 0.45;
@@ -96,6 +109,8 @@
   :root {
     --t-sentence-lh: 1.4;
     --t-hero: 2.25rem;
+    --t-ar-sentence-base: 1.875rem;
+    --t-ar-glyph-base: 4rem;
   }
 }
 
@@ -191,6 +206,14 @@
 }
 :root[data-text-size='130'] {
   font-size: 130%;
+}
+
+/* Arabic text-size setting (Ukuran teks Arab): multiplies only the --t-ar-* tokens */
+:root[data-ar-size='120'] {
+  --ar-scale: 1.2;
+}
+:root[data-ar-size='140'] {
+  --ar-scale: 1.4;
 }
 
 /* Reduced motion: everything becomes a quick cross-fade */
