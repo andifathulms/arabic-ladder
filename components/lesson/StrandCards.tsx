@@ -52,7 +52,7 @@ export function SoundCard({ sound, explain }: { sound: NonNullable<Lesson['sound
       </h3>
       <ul className="flex flex-wrap gap-2">
         {sound.words.map((w) => (
-          <li key={w} className="card flex items-center gap-1 py-1 pl-3 pr-1">
+          <li key={w} className="card flex items-center gap-1 py-1 ps-3 pe-1">
             <span lang="en" className="font-display font-semibold">
               {w}
             </span>

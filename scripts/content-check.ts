@@ -13,6 +13,7 @@ import {
 import { focusCount } from '../lib/markup';
 import type { CheckItem, Lesson } from '../lib/types';
 import { lintLessons } from '../lib/content/lint';
+import { lintPhysical } from './lint-physical';
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -139,6 +140,9 @@ for (const rung of rungs) {
 // 5. Inventory, lexicon and structure lint
 const lint = lintLessons(rungs, lessonsByRung);
 for (const f of lint) (f.level === 'error' ? errors : warnings).push(f.message);
+
+// 6. No physical CSS in Arabic-bearing components (CLAUDE.md §6.3)
+for (const f of lintPhysical()) err(`${f.file}:${f.line}: physical CSS "${f.match}" (use a logical property)`);
 
 for (const w of warnings) console.warn(`warn  ${w}`);
 for (const e of errors) console.error(`error ${e}`);

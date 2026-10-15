@@ -10,6 +10,7 @@ import { Toggle } from './ui/Toggle';
 import { useCanSpeak, useSpeak } from './useSpeech';
 import { IconPlay } from './ui/Icon';
 import { chosenVoiceName } from '@/lib/speech/speak';
+import { ArIsland } from './ar/ArIsland';
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -160,6 +161,29 @@ export function SettingsView() {
               { value: 130, label: '130%' },
             ]}
           />
+        </Row>
+        <Row label={t('settings.arabicSize')}>
+          <Segmented
+            label={t('settings.arabicSize')}
+            value={s.arabicSize}
+            onChange={(v) => set({ arabicSize: v })}
+            options={[
+              { value: 100, label: '100%' },
+              { value: 120, label: '120%' },
+              { value: 140, label: '140%' },
+            ]}
+          />
+          <div className="flex flex-col gap-1 rounded-md bg-paper-2 px-4 py-2" aria-live="polite">
+            <ArIsland block size="sentence">
+              كِتَابٌ جَدِيدٌ
+            </ArIsland>
+            <p className="text-small">
+              <span lang="ar-Latn" className="tr-text">
+                kitābun jadīdun
+              </span>{' '}
+              · <span className="id-text">{t('settings.arabicSizePreview')}</span>
+            </p>
+          </div>
         </Row>
         <Row label={t('settings.theme')}>
           <Segmented

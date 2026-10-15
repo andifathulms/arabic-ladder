@@ -35,12 +35,12 @@ export function ClimbMoment({ rung, next, onReview }: Props) {
       <div className="page relative flex min-h-full max-w-lesson flex-col justify-center gap-7 py-8">
         {/* Ladder fragment: this rung and the next */}
         <div className="relative mx-auto w-full max-w-[340px] px-[18px]" style={{ height: ROW * 2 + 16 }} aria-hidden>
-          <span className="absolute bottom-0 left-[4px] top-0 w-[6px] rounded-full" style={{ background: 'var(--wood)' }} />
-          <span className="absolute bottom-0 right-[4px] top-0 w-[6px] rounded-full" style={{ background: 'var(--wood)' }} />
+          <span className="absolute bottom-0 start-[4px] top-0 w-[6px] rounded-full" style={{ background: 'var(--wood)' }} />
+          <span className="absolute bottom-0 end-[4px] top-0 w-[6px] rounded-full" style={{ background: 'var(--wood)' }} />
           {[next, rung].map((r, i) => (
             <div
               key={r?.id ?? 'next'}
-              className="absolute left-[18px] right-[18px] flex items-center justify-between gap-3 rounded-sm px-3"
+              className="absolute start-[18px] end-[18px] flex items-center justify-between gap-3 rounded-sm px-3"
               style={{
                 top: 8 + i * ROW,
                 height: ROW - 16,
@@ -56,15 +56,15 @@ export function ClimbMoment({ rung, next, onReview }: Props) {
                 </span>
               )}
               <span
-                className="absolute -bottom-[10px] -left-[14px] -right-[14px] h-[4px] rounded-full"
+                className="absolute -bottom-[10px] -start-[14px] -end-[14px] h-[4px] rounded-full"
                 style={{ background: i === 1 && climbed ? 'var(--rung)' : 'var(--wood-dark)', transition: 'background var(--m-moment-d) var(--ease-moment)' }}
               />
             </div>
           ))}
           <span
-            className="absolute left-[-15px] h-0 w-0 border-y-[8px] border-l-[12px] border-y-transparent"
+            className="absolute -start-[15px] h-0 w-0 border-y-[8px] border-s-[12px] border-y-transparent"
             style={{
-              borderLeftColor: 'var(--brass)',
+              borderInlineStartColor: 'var(--brass)',
               top: 8 + (ROW - 16) / 2 - 8 + (climbed ? 0 : ROW),
               transition: reduced ? 'none' : 'top var(--m-moment-d) var(--ease-moment)',
             }}

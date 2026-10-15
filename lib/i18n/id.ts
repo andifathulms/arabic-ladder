@@ -138,6 +138,8 @@ export const id = {
   'settings.sfx': 'Efek suara',
   'settings.sfxHint': 'Bunyi lembut saat menjawab dan selesai.',
   'settings.textSize': 'Ukuran teks',
+  'settings.arabicSize': 'Ukuran teks Arab',
+  'settings.arabicSizePreview': 'buku baru',
   'settings.theme': 'Tema',
   'settings.theme.system': 'Sistem',
   'settings.theme.light': 'Terang',
