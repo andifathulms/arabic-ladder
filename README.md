@@ -27,3 +27,15 @@ Progress lives only in the browser (`localStorage`, key `arabic-ladder:v1`). The
 ## Content status
 
 All lessons are **drafts** written with AI help. They must be reviewed by an Arabic teacher or native speaker (and Egyptian lines by an Egyptian speaker) before they are marked `reviewed`. The deployed site shows drafts, each with a Draft badge.
+
+## Audio
+
+Every Arabic string is keyed by `sha1(normalise(text) + '|' + variety)[0:12]` and played from `public/audio/<key>-<hash>.mp3` when a recording exists; otherwise the browser's Arabic voice is used (`ar-EG` for Egyptian, `ar-SA` then any `ar-*` for Fusha), and play buttons hide where there is neither.
+
+```bash
+npm run audio:list > recordings.csv   # strings without a recording: key,variety,text,where
+# the voice actor returns one file per row, named <key>.wav, into ./recordings
+npm run audio:ingest                  # trim, −16 LUFS, mono 48 kbps MP3, update the manifest (needs ffmpeg)
+```
+
+Optional word timings for the speaking highlight: `recordings/<key>.words.json`, an array of word start times in milliseconds. Until recordings exist, `content/audio/fallback.yaml` accepts the browser-speech fallback for drafts.
