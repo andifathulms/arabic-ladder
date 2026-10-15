@@ -176,3 +176,14 @@ describe('Arabic item types', () => {
     expect(onSolved).toHaveBeenCalledWith(true);
   });
 });
+
+describe('mixed prompts', () => {
+  it('keeps an Indonesian question LTR and puts the quoted Arabic in an island', () => {
+    const q: CheckItem = { id: 'q1', type: 'choice', match: 'exact', prompt: 'Huruf ini namanya apa? ذ', options: ['dal', 'dzal'], answer: 'dzal', why };
+    const { container } = wrap(<CheckItemView mode="practice" item={q} onSolved={() => {}} />);
+    const p = container.querySelector('p[lang="id"].text-sentence')!;
+    expect(p.textContent).toContain('Huruf ini namanya apa?');
+    expect(p.querySelector('bdi[dir="rtl"]')!.textContent).toBe('ذ');
+    expect(container.querySelector('p[dir="rtl"]')).toBeNull();
+  });
+});

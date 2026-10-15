@@ -113,7 +113,7 @@ export function ArTileTray({ tiles, placed, onChange, mode, slots, locked, tone 
             style={toneStyle(tone)}
             data-answer-line
           >
-            <ArIsland block size="sentence" className="w-full fade-in" key={reduced ? 'w' : word}>
+            <ArIsland block size="sentence" className="w-full text-ink fade-in" key={reduced ? 'w' : word}>
               {word || ' '}
             </ArIsland>
           </button>

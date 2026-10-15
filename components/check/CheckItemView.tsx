@@ -5,8 +5,8 @@ import type { CheckItem } from '@/lib/types';
 import { grade, type Response } from '@/lib/check/grade';
 import { rng, shuffle } from '@/lib/check/random';
 import { sfx } from '@/lib/speech/sfx';
-import { stripMarkup } from '@/lib/markup';
-import { hasArabic } from '@/lib/arabic/text';
+import { parseInline, stripMarkup } from '@/lib/markup';
+import { findArabicRuns, hasArabic } from '@/lib/arabic/text';
 import { withoutMark } from '@/lib/arabic/marks';
 import { OptionPill, type PillState } from './OptionPill';
 import { TileTray } from './TileTray';
@@ -36,23 +36,80 @@ type Practice = Common & {
 };
 type Test = Common & { mode: 'test'; value?: Response; onChange: (r: Response) => void };
 
+/** Short prompt text with *italic* and **term** markup, Arabic runs in islands. */
+function Inline({ text, arClass }: { text: string; arClass?: string }) {
+  return (
+    <>
+      {parseInline(text).map((tok, i) =>
+        tok.t === 'em' ? (
+          <em key={i}>{tok.v}</em>
+        ) : tok.t === 'strong' || tok.t === 'focus' ? (
+          hasArabic(tok.v) ? (
+            <ArIsland key={i} className={`text-accent ${arClass ?? ''}`}>
+              {tok.v}
+            </ArIsland>
+          ) : (
+            <strong key={i} className="text-accent">
+              {tok.v}
+            </strong>
+          )
+        ) : hasArabic(tok.v) ? (
+          <WithArabic key={i} text={tok.v} arClass={arClass} />
+        ) : (
+          <span key={i}>{tok.v}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/** Latin text with Arabic runs wrapped in inline islands (the line stays LTR). */
+function WithArabic({ text, arClass }: { text: string; arClass?: string }) {
+  const runs = findArabicRuns(text);
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  runs.forEach((r, i) => {
+    if (r.start > last) out.push(<span key={`t${i}`}>{text.slice(last, r.start)}</span>);
+    out.push(
+      <ArIsland key={`a${i}`} className={arClass}>
+        {r.text}
+      </ArIsland>,
+    );
+    last = r.end;
+  });
+  if (last < text.length) out.push(<span key="end">{text.slice(last)}</span>);
+  return <>{out}</>;
+}
+
+/** Mostly Latin text (a question in Indonesian) stays an LTR line even when it quotes Arabic. */
+const isLatinLine = (s: string) => /[A-Za-z]/.test(stripMarkup(s));
+
 const seedOf = (id: string) => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 /** A choice/gap prompt. Arabic prompts are an RTL island with the blank as an underline. */
 function Prompt({ text, fill }: { text: string; fill?: string }) {
   const [a, b] = text.split('___');
   if (b === undefined) {
-    return hasArabic(text) ? <ArSentence ar={text} play={false} showTranslit={false} /> : <Sentence en={text} />;
+    if (hasArabic(text) && !isLatinLine(text))
+      return <ArSentence ar={text} play={false} showTranslit={false} />;
+    return (
+      <p lang="id" className="font-display text-sentence font-medium text-ink">
+        <Inline text={text} arClass="text-ar-sentence leading-none" />
+      </p>
+    );
   }
   const blank = (
     <>
-      <span aria-hidden className="mx-1 inline-block w-[3.5em] border-b-2 border-ink align-baseline">
+      <span
+        aria-hidden
+        className="mx-1 inline-block w-[3.5em] border-b-2 border-ink align-baseline"
+      >
         &nbsp;
       </span>
       <span className="sr-only">blank</span>
     </>
   );
-  if (hasArabic(text) || (fill && hasArabic(fill))) {
+  if ((hasArabic(text) && !isLatinLine(text)) || (!isLatinLine(text) && fill && hasArabic(fill))) {
     return (
       <ArIsland block as="p" size="sentence" className="text-ink">
         {stripMarkup(a)}
@@ -63,15 +120,31 @@ function Prompt({ text, fill }: { text: string; fill?: string }) {
   }
   return (
     <p lang="id" className="font-display text-sentence font-medium text-ink">
-      {stripMarkup(a)}
-      {fill ? <span className="focus-word">{fill}</span> : blank}
-      {stripMarkup(b)}
+      <WithArabic text={stripMarkup(a)} arClass="text-ar-sentence leading-none" />
+      {fill ? (
+        hasArabic(fill) ? (
+          <ArIsland className="ar-focus text-ar-sentence leading-none">{fill}</ArIsland>
+        ) : (
+          <span className="focus-word">{fill}</span>
+        )
+      ) : (
+        blank
+      )}
+      <WithArabic text={stripMarkup(b)} arClass="text-ar-sentence leading-none" />
     </p>
   );
 }
 
 /** A big round play button for listen and dictation items. */
-function BigPlay({ audio, variety, label }: { audio: string; variety: 'fusha' | 'eg'; label: string }) {
+function BigPlay({
+  audio,
+  variety,
+  label,
+}: {
+  audio: string;
+  variety: 'fusha' | 'eg';
+  label: string;
+}) {
   const play = usePlay();
   const [playing, setPlaying] = useState(false);
   const run = async () => {
@@ -94,12 +167,20 @@ function BigPlay({ audio, variety, label }: { audio: string; variety: 'fusha' | 
 }
 
 /** Plays the line to identify. With no recording and no Arabic voice, the text is shown instead. */
-function ListenPrompt({ audio, prompt, variety }: { audio: string; prompt?: string; variety: 'fusha' | 'eg' }) {
+function ListenPrompt({
+  audio,
+  prompt,
+  variety,
+}: {
+  audio: string;
+  prompt?: string;
+  variety: 'fusha' | 'eg';
+}) {
   const { t } = useT();
   const canPlay = useCanPlay(audio, variety);
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-small text-muted">{prompt ?? t('check.listenPrompt')}</p>
+      <p className="text-small text-muted">{<Inline text={prompt ?? t('check.listenPrompt')} />}</p>
       {canPlay ? (
         <BigPlay audio={audio} variety={variety} label={t('check.listenPlay')} />
       ) : (
@@ -116,7 +197,13 @@ function ListenPrompt({ audio, prompt, variety }: { audio: string; prompt?: stri
 function MarkPrompt({ ar, target, shown }: { ar: string; target: number; shown?: string }) {
   const { before, letter, after } = withoutMark(stripMarkup(ar), target);
   return (
-    <ArIsland block as="p" size="sentence" className="text-center text-ink" aria-label={stripMarkup(ar)}>
+    <ArIsland
+      block
+      as="p"
+      size="sentence"
+      className="text-center text-ink"
+      aria-label={stripMarkup(ar)}
+    >
       {before}
       <span className="relative inline-block rounded-full px-1 outline-dashed outline-2 outline-offset-4 outline-accent">
         {letter}
@@ -138,10 +225,12 @@ export function CheckItemView(props: Practice | Test) {
   // Tiles for order and spell items. Spell tiles are shuffled deterministically per item.
   const tiles = useMemo(() => {
     if (item.type === 'order') return item.tiles;
-    if (item.type === 'spell') return shuffle([...item.letters, ...item.distractors], rng(seedOf(item.id)));
+    if (item.type === 'spell')
+      return shuffle([...item.letters, ...item.distractors], rng(seedOf(item.id)));
     return [];
   }, [item]);
-  const answerTiles = item.type === 'order' ? item.answer : item.type === 'spell' ? item.letters : [];
+  const answerTiles =
+    item.type === 'order' ? item.answer : item.type === 'spell' ? item.letters : [];
   const [placed, setPlaced] = useState<number[]>(() => {
     const used = new Set<number>();
     const indexOf = (w: string) => {
@@ -150,7 +239,8 @@ export function CheckItemView(props: Practice | Test) {
       return i;
     };
     if (practice && (props as Practice).solved) return answerTiles.map(indexOf);
-    if (!practice && Array.isArray((props as Test).value)) return ((props as Test).value as string[]).map(indexOf);
+    if (!practice && Array.isArray((props as Test).value))
+      return ((props as Test).value as string[]).map(indexOf);
     return [];
   });
   const [tilesOff, setTilesOff] = useState(false);
@@ -220,40 +310,58 @@ export function CheckItemView(props: Practice | Test) {
   const inSheet = practice && !!(props as Practice).whyInSheet;
   const showWhy = practice && (solved ? !inSheet : missed >= 2);
   const arabicOptions = options.some(hasArabic);
-  const wideOptions = arabicOptions || item.type === 'fix' || item.type === 'scene' || item.type === 'listen';
+  const wideOptions =
+    arabicOptions || item.type === 'fix' || item.type === 'scene' || item.type === 'listen';
   const tileItem = item.type === 'order' || item.type === 'spell';
-  const arabicTiles = item.type === 'spell' || (item.type === 'order' && item.tiles.some(hasArabic));
+  const arabicTiles =
+    item.type === 'spell' || (item.type === 'order' && item.tiles.some(hasArabic));
 
   return (
     <div className="flex flex-col gap-5" data-item={item.id}>
       {item.cue && (
         <p lang="id" className="id-text">
-          {item.cue}
+          <Inline text={item.cue} />
         </p>
       )}
 
-      {(item.type === 'choice' || item.type === 'gap') && <Prompt text={item.prompt} fill={solved ? item.answer : undefined} />}
+      {(item.type === 'choice' || item.type === 'gap') && (
+        <Prompt text={item.prompt} fill={solved ? item.answer : undefined} />
+      )}
       {item.type === 'fix' && (
         <div className="flex flex-col gap-2">
           <p className="text-small text-muted">{t('check.fixPrompt')}</p>
-          {hasArabic(item.wrong) ? <ArSentence ar={item.wrong} off play={false} showTranslit={false} /> : <Sentence en={item.wrong} off />}
+          {hasArabic(item.wrong) && !isLatinLine(item.wrong) ? (
+            <ArSentence ar={item.wrong} off play={false} showTranslit={false} />
+          ) : (
+            <Sentence en={item.wrong} off />
+          )}
         </div>
       )}
       {item.type === 'scene' && (
         <div className="flex flex-col gap-3">
           <VisualStage visual={item.visual} interactive={false} />
-          <p className="text-small text-muted">{item.prompt ?? t('check.scenePrompt')}</p>
+          <p className="text-small text-muted">
+            {<Inline text={item.prompt ?? t('check.scenePrompt')} />}
+          </p>
         </div>
       )}
-      {item.type === 'listen' && <ListenPrompt audio={item.audio} prompt={item.prompt} variety={item.variety} />}
+      {item.type === 'listen' && (
+        <ListenPrompt audio={item.audio} prompt={item.prompt} variety={item.variety} />
+      )}
       {/* Reading items never show transliteration, whatever the rung's setting (CLAUDE.md §5.3). */}
       {item.type === 'read' && (
         <div className="flex flex-col gap-3">
-          <p className="text-small text-muted">{item.prompt ?? t('check.readPrompt')}</p>
+          <p className="text-small text-muted">
+            {<Inline text={item.prompt ?? t('check.readPrompt')} />}
+          </p>
           <div className="rounded-lg bg-paper-2 px-4 py-3">
             <ArSentence
               ar={item.ar}
-              size={[...stripMarkup(item.ar)].filter((c) => /[ء-ي]/.test(c)).length <= 2 ? 'glyph' : 'sentence'}
+              size={
+                [...stripMarkup(item.ar)].filter((c) => /[ء-ي]/.test(c)).length <= 2
+                  ? 'glyph'
+                  : 'sentence'
+              }
               play={false}
               showTranslit={false}
             />
@@ -262,7 +370,9 @@ export function CheckItemView(props: Practice | Test) {
       )}
       {item.type === 'mark' && (
         <div className="flex flex-col gap-3">
-          <p className="text-small text-muted">{item.prompt ?? t('check.markPrompt')}</p>
+          <p className="text-small text-muted">
+            {<Inline text={item.prompt ?? t('check.markPrompt')} />}
+          </p>
           <div className="rounded-lg bg-paper-2 px-4 py-4">
             <MarkPrompt ar={item.ar} target={item.target} />
           </div>
@@ -270,7 +380,11 @@ export function CheckItemView(props: Practice | Test) {
       )}
       {item.type === 'spell' && (
         <div className="flex flex-col gap-3">
-          {item.prompt && <p className="text-small text-muted">{item.prompt}</p>}
+          {item.prompt && (
+            <p className="text-small text-muted">
+              <Inline text={item.prompt} />
+            </p>
+          )}
           {item.dictation && item.audio && (
             <div className="flex items-center gap-3">
               <BigPlay audio={item.audio} variety="fusha" label={t('check.dictationPlay')} />
@@ -311,7 +425,12 @@ export function CheckItemView(props: Practice | Test) {
             />
           )}
           {practice && !solved && (
-            <button type="button" className="btn btn-primary self-start" disabled={placed.length !== answerTiles.length} onClick={checkTiles}>
+            <button
+              type="button"
+              className="btn btn-primary self-start"
+              disabled={placed.length !== answerTiles.length}
+              onClick={checkTiles}
+            >
               {t('check.checkOrder')}
             </button>
           )}
