@@ -4,32 +4,48 @@ import matter from 'gray-matter';
 import yaml from 'js-yaml';
 import { expect, type Page } from '@playwright/test';
 
-type Item = { id: string; type: string; answer: string | string[] };
+type Item = { id: string; type: string; answer: string | string[]; letters?: string[] };
 
-export function lessonItems(file: string): Item[] {
-  const raw = fs.readFileSync(path.join('content/easy-1', file), 'utf8');
-  return (matter(raw).data as { check: Item[] }).check;
+const load = (p: string) => yaml.load(fs.readFileSync(p, 'utf8'), { schema: yaml.JSON_SCHEMA });
+
+export function lessonItems(rung: string, file: string): Item[] {
+  const raw = fs.readFileSync(path.join('content', rung, file), 'utf8');
+  return (matter(raw, { engines: { yaml: (s) => yaml.load(s, { schema: yaml.JSON_SCHEMA }) as object } }).data as { check: Item[] }).check;
 }
 
-export function testItems(): Record<string, Item> {
-  const pool = yaml.load(fs.readFileSync('content/easy-1/test.yaml', 'utf8')) as { items: Item[] };
+export function lessonFile(rung: string, order: number): string {
+  return fs.readdirSync(path.join('content', rung)).find((f) => f.startsWith(String(order).padStart(2, '0') + '-'))!;
+}
+
+export function poolItems(file: string): Record<string, Item> {
+  const pool = load(file) as { items: Item[] };
   return Object.fromEntries(pool.items.map((i) => [i.id, i]));
 }
 
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 /** Answers whatever check item is on screen, correctly. */
-export async function answer(page: Page, items: Record<string, Item>) {
+export async function answer(page: Page, items: Record<string, Item>, practice = true) {
   const id = await page.locator('[data-item]').getAttribute('data-item');
   const item = items[id!];
-  if (item.type === 'order') {
-    for (const w of item.answer as string[]) {
-      await page.locator('[data-item] [role="group"]').last().getByRole('button', { name: new RegExp(`^${esc(w)}$`) }).first().click();
+  if (item.type === 'order' || item.type === 'spell') {
+    const seq = item.type === 'spell' ? item.letters! : (item.answer as string[]);
+    for (const w of seq) {
+      await page.locator(`[data-item] [role="group"]:last-of-type [data-tile="${w}"]`).first().click();
     }
-    const check = page.getByRole('button', { name: /^(Periksa|Check)$/ });
-    if (await check.count()) await check.click();
+    if (practice) await page.getByRole('button', { name: /^(Periksa|Check)$/ }).click();
+  } else if (item.type === 'mark') {
+    await page.locator(`[data-item] [data-mark="${item.answer}"]`).click();
   } else {
-    await page.locator('[data-item] button[data-state]').filter({ hasText: new RegExp(`^${esc(item.answer as string)}$`) }).click();
+    const want = (item.answer as string).normalize('NFC');
+    const pills = page.locator('[data-item] button[data-state]');
+    const n = await pills.count();
+    for (let i = 0; i < n; i++) {
+      const text = ((await pills.nth(i).textContent()) ?? '').replace(/‍/g, '').replace(/^\d/, '').trim().normalize('NFC');
+      if (text === want) {
+        await pills.nth(i).click();
+        return;
+      }
+    }
+    throw new Error(`no option "${want}" for ${id}`);
   }
 }
 

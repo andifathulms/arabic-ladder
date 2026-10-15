@@ -124,8 +124,9 @@ export function SunMoon({ letter, interactive = true, lang }: Props) {
           <span>{alif}</span>
           <span
             style={{
-              opacity: sun ? 0.28 : 1,
-              transition: reduced ? 'none' : 'opacity var(--m-object-d) var(--ease)',
+              // Written but silent: muted (still readable, and above contrast targets).
+              color: sun ? 'var(--muted)' : undefined,
+              transition: reduced ? 'none' : 'color var(--m-object-d) var(--ease)',
             }}
           >
             {lam}
