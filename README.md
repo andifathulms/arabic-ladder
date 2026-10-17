@@ -1,5 +1,12 @@
 # Arabic Ladder
 
+> **Development has moved.** Arabic Ladder now lives in the Ladder monorepo, on the shared engine
+> (`apps/arabic` in [english-ladder](https://github.com/andifathulms/english-ladder)). This repository
+> is the deploy target only: the monorepo builds the app and pushes it to this repo's `gh-pages`
+> branch, which GitHub Pages serves at <https://andifathulms.github.io/arabic-ladder/> (same URL,
+> same progress storage). Please open issues and changes there. The code below is the last
+> standalone version (`aedfae7`), kept for reference.
+
 A calm, levelled Arabic course for Indonesian speakers, from the very first letter to reading unvowelled Arabic. Eleven rungs: **Huruf 1–2** (script), **Easy 1–3**, **Medium 1–3**, **Hard 1–3**. Fusha (Modern Standard Arabic) is the backbone; Egyptian Arabic is the spoken strand.
 
 - `PRD.md`: what to build
